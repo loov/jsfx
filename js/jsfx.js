@@ -15,62 +15,51 @@ var jsfx = {};
     this.loadParameters = function () {
         var ap = this.addParam,
             al = this.addLine;
-        ap("Master Volume",  0, 1, 0.3, -1);
+        var grp = 0;
+        ap("Master Volume",  0, 1, 0.3, grp);
+        grp++;
         
-        ap("Attack Time",    0, 1, 0.1, 0); // seconds
-        ap("Sustain Time",   0, 2, 0.4, 0); // seconds
-        ap("Sustain Punch",  0, 3, 2, 0);
-        ap("Decay Time",     0, 2, 1, 0); // seconds
+        ap("Attack Time",    0, 1, 0.1, grp); // seconds
+        ap("Sustain Time",   0, 2, 0.4, grp); // seconds
+        ap("Sustain Punch",  0, 3, 2, grp);
+        ap("Decay Time",     0, 2, 1, grp); // seconds
         
-        ap("Min Frequency",   20, 2000, 440, 1);
-        ap("Start Frequency", 20, 2000, 440, 1);
-        ap("Max Frequency",   20, 2000, 440, 1);
-        ap("Slide",           -1, 1, 0, 1);
-        ap("Delta Slide",     -1, 1, 0, 1);
-        ap("Vibrato Depth",    0, 1, 0.1, 1);
-        ap("Vibrato Frequency", 0.01, 48, 1, 1);
+        grp++;
+        ap("Min Frequency",   20, 2000, 0, grp);
+        ap("Start Frequency", 20, 2000, 440, grp);
+        ap("Max Frequency",   20, 2000, 2000, grp);
+        ap("Slide",           -1, 1, 0, grp);
+        ap("Delta Slide",     -1, 1, 0, grp);
         
-        ap("Change Amount", 0, 100, 50, 2);
-        ap("Change Speed",  0, 100, 50, 2);
+        grp++;
+        ap("Vibrato Depth",     0, 1, 0.1, grp);
+        ap("Vibrato Frequency", 0.01, 48, 8, grp);
+        ap("Vibrato Depth Slide",   -0.3, 1, 0, grp);
+        ap("Vibrato Frequency Slide", -1, 1, 0, grp);
         
-        ap("Square Duty", 0, 100, 50, 3);
-        ap("Duty Sweep",  0, 100, 50, 3);
+        grp++;
+        ap("Change Amount", 0, 100, 50, grp);
+        ap("Change Speed",  0, 100, 50, grp);
         
-        ap("Repeat Speed", 0, 100, 50, 4);
+        grp++;
+        ap("Square Duty", 0, 100, 50, grp);
+        ap("Duty Sweep",  0, 100, 50, grp);
         
-        ap("Phaser Offset", 0, 100, 50, 5);
-        ap("Phaser Sweep",  0, 100, 50, 5);
+        grp++;
+        ap("Repeat Speed", 0, 100, 50, grp);
         
-        ap("LP Filter Cutoff", 0, 100, 50, 6);
-        ap("LP Filter Cutoff Sweep", 0, 100, 50, 6);
-        ap("LP Filter Resonance",    0, 100, 50, 6);
-        ap("HP Filter Cutoff",       0, 100, 50, 6);
-        ap("HP Filter Cutoff Sweep", 0, 100, 50, 6);
+        grp++;
+        ap("Phaser Offset", 0, 100, 50, grp);
+        ap("Phaser Sweep",  0, 100, 50, grp);
+        
+        grp++;
+        ap("LP Filter Cutoff", 0, 100, 50, grp);
+        ap("LP Filter Cutoff Sweep", 0, 100, 50, grp);
+        ap("LP Filter Resonance",    0, 100, 50, grp);
+        ap("HP Filter Cutoff",       0, 100, 50, grp);
+        ap("HP Filter Cutoff Sweep", 0, 100, 50, grp);
     };
-    
-    this.randomize = function(){
-        var len = Parameters.length;
-        for (var i = 0; i < len; i++) {
-            var param = Parameters[i];
-            if( param.group === -1 ) continue;
-            param.node.value = param.min + (param.max - param.min) * Math.random();
-        }
-        this.play();
-    }
-    
-    this.play = function(){
-        log('get params');
-        var params = this.getParams();
-        log('generate');
-        var data = this.generate(params);
-        log('make wave');
-        var wave = audio.make(data);
-        log('play');
-        wave.play();
-        log('done')
-        return wave;
-    }
-    
+        
     this.generate = function(params){
         // useful consts
         var TAU = 2 * Math.PI;
@@ -128,11 +117,14 @@ var jsfx = {};
         var vibrato_phase = 0;
         var vibrato_phase_speed = params.VibratoFrequency * TAU / SampleRate;
         var vibrato_amplitude = params.VibratoDepth;
-        var vibrato_phase_mod = 0;
+        
+        // frequency vibrato slide
+        var vibrato_phase_slide = 1.0 + Math.pow(params.VibratoFrequencySlide, 3.0) * 3.0 / SampleRate;
+        var vibrato_amplitude_slide = params.VibratoDepthSlide / SampleRate;
         
         // slide calculation
-        var slide = 1.0 + Math.pow(params.Slide, 3.0) / 1000;
-        var delta_slide = params.DeltaSlide * params.DeltaSlide * params.DeltaSlide / 1000000;
+        var slide = 1.0 + Math.pow(params.Slide, 3.0) * 3.0 / SampleRate;
+        var delta_slide = Math.pow(params.DeltaSlide, 3.0) / (SampleRate * 1000);
         
         // master volume controller
         var master_volume = params.MasterVolume;
@@ -157,8 +149,21 @@ var jsfx = {};
             
             // frequency vibrato
             vibrato_phase += vibrato_phase_speed;
-            vibrato_phase_mod = phase_speed * Math.sin(vibrato_phase) * vibrato_amplitude;
-            phase += vibrato_phase_mod;
+            var _vibrato_phase_mod = phase_speed * Math.sin(vibrato_phase) * vibrato_amplitude;
+            phase += _vibrato_phase_mod;
+            
+            // frequency vibrato slide
+            vibrato_phase_speed *= vibrato_phase_slide;
+            if(vibrato_amplitude_slide !== 0){
+                vibrato_amplitude += vibrato_amplitude_slide;
+                if(vibrato_amplitude < 0){
+                    vibrato_amplitude = 0;
+                    vibrato_amplitude_slide = 0;
+                } else if (vibrato_amplitude > 1){
+                    vibrato_amplitude = 1;
+                    vibrato_amplitude_slide = 0;
+                }
+            }
             
             // envelope processing
             if( i > envelope_last ){
@@ -215,7 +220,7 @@ var jsfx = {};
     };
 
     var nameToParam = function(name){
-        return name.replace(" ", "");
+        return name.replace(/ /g, "");
     }
     
     this.getParams = function () {
@@ -253,11 +258,39 @@ var jsfx = {};
         }
     }
     
-    this.resetParams = function () {
+    this.randomize = function(){
+        var len = Parameters.length;
+        for (var i = 0; i < len; i++) {
+            var param = Parameters[i];
+            if( param.group === -1 ) continue;
+            param.node.value = param.min + (param.max - param.min) * Math.random();
+        }        
+        
+        // hack
+        var generators = document.getElementById("generators").generator;        
+        var i = (Math.random() * generators.length) | 0;
+        generators[i].checked = true;
+        
+        this.play();
+    }
+    
+    this.reset = function () {
         var len = Parameters.length;
         for (var i = 0; i < len; i += 1) {
             var param = Parameters[i];
             param.node.value = param.def;
         }
     }
+    
+    this.play = function(){
+        var params = this.getParams();
+        log('generate');
+        var data = this.generate(params);
+        log('make wave');
+        var wave = audio.make(data);
+        log('play');
+        wave.play();
+        return wave;
+    }
+    
 }).apply(jsfx);
