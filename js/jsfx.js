@@ -2,62 +2,57 @@ var jsfx = {};
 (function () {
     var Parameters = [];
 
-    this.addParam = function (name, min, max, def, group) {
-        var param = { name: name,
-                      min: min,
-                      max: max,
-                      def: def,
-                      node: 0,
-                      group: group};
-        Parameters.push(param);
-    };
-    
     this.loadParameters = function () {
-        var ap = this.addParam,
-            al = this.addLine;
         var grp = 0;
-        ap("Master Volume",  0, 1, 0.3, grp);
+        var ap = function (name, min, max, def) {
+            var param = { name: name,
+                          min: min, max: max, def: def,
+                          node: undefined, group: grp};
+            Parameters.push(param);
+        };
+        
+        ap("Master Volume",  0, 1, 0.3);
         grp++;
         
-        ap("Attack Time",    0, 1, 0.1, grp); // seconds
-        ap("Sustain Time",   0, 2, 0.4, grp); // seconds
-        ap("Sustain Punch",  0, 3, 2, grp);
-        ap("Decay Time",     0, 2, 1, grp); // seconds
+        ap("Attack Time",    0, 1, 0.1); // seconds
+        ap("Sustain Time",   0, 2, 0.4); // seconds
+        ap("Sustain Punch",  0, 3, 2);
+        ap("Decay Time",     0, 2, 1); // seconds
+        grp++;
+        
+        ap("Min Frequency",   20, 2000, 0);
+        ap("Start Frequency", 20, 2000, 440);
+        ap("Max Frequency",   20, 2000, 2000);
+        ap("Slide",           -1, 1, 0);
+        ap("Delta Slide",     -1, 1, 0);
         
         grp++;
-        ap("Min Frequency",   20, 2000, 0, grp);
-        ap("Start Frequency", 20, 2000, 440, grp);
-        ap("Max Frequency",   20, 2000, 2000, grp);
-        ap("Slide",           -1, 1, 0, grp);
-        ap("Delta Slide",     -1, 1, 0, grp);
+        ap("Vibrato Depth",     0, 1, 0.1);
+        ap("Vibrato Frequency", 0.01, 48, 8);
+        ap("Vibrato Depth Slide",   -0.3, 1, 0);
+        ap("Vibrato Frequency Slide", -1, 1, 0);
         
         grp++;
-        ap("Vibrato Depth",     0, 1, 0.1, grp);
-        ap("Vibrato Frequency", 0.01, 48, 8, grp);
-        ap("Vibrato Depth Slide",   -0.3, 1, 0, grp);
-        ap("Vibrato Frequency Slide", -1, 1, 0, grp);
+        ap("Change Amount", 0, 100, 50);
+        ap("Change Speed",  0, 100, 50);
         
         grp++;
-        ap("Change Amount", 0, 100, 50, grp);
-        ap("Change Speed",  0, 100, 50, grp);
+        ap("Square Duty", 0, 100, 50);
+        ap("Duty Sweep",  0, 100, 50);
         
         grp++;
-        ap("Square Duty", 0, 100, 50, grp);
-        ap("Duty Sweep",  0, 100, 50, grp);
+        ap("Repeat Speed", 0, 100, 50);
         
         grp++;
-        ap("Repeat Speed", 0, 100, 50, grp);
+        ap("Phaser Offset", 0, 100, 50);
+        ap("Phaser Sweep",  0, 100, 50);
         
         grp++;
-        ap("Phaser Offset", 0, 100, 50, grp);
-        ap("Phaser Sweep",  0, 100, 50, grp);
-        
-        grp++;
-        ap("LP Filter Cutoff", 0, 100, 50, grp);
-        ap("LP Filter Cutoff Sweep", 0, 100, 50, grp);
-        ap("LP Filter Resonance",    0, 100, 50, grp);
-        ap("HP Filter Cutoff",       0, 100, 50, grp);
-        ap("HP Filter Cutoff Sweep", 0, 100, 50, grp);
+        ap("LP Filter Cutoff", 0, 100, 50);
+        ap("LP Filter Cutoff Sweep", 0, 100, 50);
+        ap("LP Filter Resonance",    0, 100, 50);
+        ap("HP Filter Cutoff",       0, 100, 50);
+        ap("HP Filter Cutoff Sweep", 0, 100, 50);
     };
         
     this.generate = function(params){
