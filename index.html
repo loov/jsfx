@@ -27,7 +27,11 @@
       -webkit-column-width: 250px;
       -webkit-column-gap: 20px;
       -webkit-column-rule: 1px dashed black;      
-      height : 300px;
+      height : 330px;
+    }
+    
+    #config-panel #generators {
+      margin-bottom : 5px;
     }
     
     #config-panel table {
@@ -38,7 +42,7 @@
       width : 100%;
     }
     
-    #config-panel table:nth-child(3), #config-panel table:nth-child(7) {
+    #config-panel table:nth-child(4), #config-panel table:nth-child(8) {
       -moz-column-break-after: always;
       -webkit-column-break-after: always;
     }
@@ -70,14 +74,15 @@
         <button caption="randomize" onclick="jsfx.randomize()">Randomize</button>
         <button caption="play" onclick="jsfx.play()">Play</button>
       </div>
-      <form id="generators">
-        <input type="radio" checked name="generator" value="sine" />sine
-        <input type="radio" name="generator" value="square" />square
-        <input type="radio" name="generator" value="saw" />saw
-        <input type="radio" name="generator" value="noise" />noise
-        <input type="radio" name="generator" value="synth" />synth<br />        
-      </form>
-      <div id="config-panel"></div>
+      <div id="config-panel">
+        <form id="generators">
+          <input type="radio" checked name="generator" value="sine" />sine
+          <input type="radio" name="generator" value="square" />square
+          <input type="radio" name="generator" value="saw" />saw
+          <input type="radio" name="generator" value="noise" />noise
+          <input type="radio" name="generator" value="synth" />synth<br />        
+        </form>
+      </div>
     </div>
     
     <div id="spacer"></div>
