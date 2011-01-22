@@ -1,0 +1,82 @@
+<!doctype html>  
+
+<html lang="en" class="no-js">
+<head>
+  <meta charset="utf-8">
+  <meta http-equiv="X-UA-Compatible" content="IE=edge,chrome=1">
+  
+  <title></title>
+  <meta name="description" content="">
+  <meta name="author" content="">
+  
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <link rel="shortcut icon" href="/favicon.ico">
+  <link rel="apple-touch-icon" href="/apple-touch-icon.png">
+  
+  <link rel="stylesheet" href="css/typography.css">
+  <style>
+    #param-table {
+      border-collapse : collapse;
+      table-layout : auto;
+      width : auto;
+    }
+    
+    #param-table input {
+      height : 18px;
+    }
+    
+    #param-table td, #param-table tr {
+      padding : 0;
+      margin  : 0;
+    }
+    
+    #param-table tr.line{
+      border-top: 2px solid #000;
+    }
+  </style>
+  <script>
+  function log(msg){
+    console.debug(msg);
+  }
+  </script>
+  <script src="js/audio.js"></script>
+  <script src="js/libs/modernizr-1.6.min.js"></script>
+</head>
+
+<body>
+
+  <div id="container">
+    <header>
+      <h1>jsFx</h1>
+    </header>
+    
+    <div id="main">
+      <h2>Parameters</h2>
+      <div>
+        <button caption="randomize" onclick="jsfx.randomize()">Randomize</button>
+        <button caption="play" onclick="jsfx.play()">Play</button>
+      </div>
+      <form id="generators">
+        <input type="radio" checked name="generator" value="sine" />sine
+        <input type="radio" name="generator" value="square" />square
+        <input type="radio" name="generator" value="saw" />saw
+        <input type="radio" name="generator" value="noise" />noise
+        <input type="radio" name="generator" value="synth" />synth<br />        
+      </form>
+      <table id="param-table"></table>
+    </div>
+    
+    <div id="spacer"></div>
+    <footer>
+      Egon Elbre &copy; 2011
+    </footer>
+  </div> <!-- end of #container -->
+
+  <script src="js/jsfx.js"></script>
+  <script>jsfx.createTable("param-table");</script>
+  <!-- scripts concatenated and minified via ant build script-->
+  <script src="js/plugins.js"></script>
+  <script src="js/script.js"></script>
+  <!-- end concatenated and minified scripts-->
+</body>
+</html>

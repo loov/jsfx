@@ -1,0 +1,9 @@
+[Desktop Entry]
+Name=sfxr
+Comment=Generate sound effects
+Exec=sfxr
+Icon=sfxr
+Terminal=false
+StartupNotify=false
+Type=Application
+Categories=AudioVideo;Audio;AudioVideoEditing;

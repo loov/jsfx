@@ -1,0 +1,8 @@
+To build and install under Linux do:
+make
+su -c "make install"
+
+Note the install is hardcoded to /usr, you can also run sfxr from the build
+dir after make (./sfxr).
+
+The Makefile understands the usual CFLAGS and DESTDIR parameters

@@ -1,0 +1,13 @@
+sfxr-sdl-1.0
+------------
+* Initial SDL port of sfxr by mjau/GerryJJ
+
+sfxr-sdl-1.1
+------------
+* Various small improvements and 1 bugfix by Hans de Goede
+  <hdegoede@redhat.com>:
+ * Fix a small bug in the audio setup which could cause a quite noticable
+   delay between pressing a button and hearing the sound
+ * Add an icon and .desktop file
+ * Add a make install target, note:  hardcoded to /usr but it does understand
+   the DESTDIR make parameter
