@@ -17,10 +17,10 @@ var jsfx = {};
             al = this.addLine;
         ap("Master Volume",  0, 1, 0.3, -1);
         
-        ap("Attack Time",    0, 5, 0.1, 0); // seconds
-        ap("Sustain Time",   0, 5, 1, 0); // seconds
-        ap("Sustain Punch",  0, 5, 1, 0);
-        ap("Decay Time",     0, 5, 1, 0); // seconds
+        ap("Attack Time",    0, 1, 0.1, 0); // seconds
+        ap("Sustain Time",   0, 2, 0.4, 0); // seconds
+        ap("Sustain Punch",  0, 3, 2, 0);
+        ap("Decay Time",     0, 2, 1, 0); // seconds
         
         ap("Start Frequency", 20, 2000, 440, 1);
         ap("Min Frequency",   20, 2000, 440, 1);
@@ -54,6 +54,7 @@ var jsfx = {};
             if( param.group === -1 ) continue;
             param.node.value = param.min + (param.max - param.min) * Math.random();
         }
+        this.play();
     }
     
     this.play = function(){
@@ -66,6 +67,7 @@ var jsfx = {};
         log('play');
         wave.play();
         log('done')
+        return wave;
     }
     
     this.generate = function(params){
@@ -74,23 +76,24 @@ var jsfx = {};
         var SampleRate = audio.SampleRate;
         
         // enveloping initialization
-        var envelopes = [ {volume: 1.0, time: params.AttackTime},
-                          {volume: 1.0, time: params.SustainTime},
-                          {volume: 0.0, time: params.DecayTime}];
+        var _ss = 1.0 + params.SustainPunch;
+        console.debug(_ss);
+        var envelopes = [ {from: 0.0, to: 1.0, time: params.AttackTime},
+                          {from: _ss, to: 1.0, time: params.SustainTime},
+                          {from: 1.0, to: 0.0, time: params.DecayTime}];
         var envelopes_len = envelopes.length;        
         
         // envelope sample calculation
         for(var i = 0; i < envelopes_len; i++){
-            var samples = (envelopes[i].time * SampleRate) | 0;
-            envelopes[i].samples = samples;
+            envelopes[i].samples = (envelopes[i].time * SampleRate) | 0
         }
         
         // envelope loop variables
-        var envelope = envelopes[0];
+        var envelope = undefined;
         var envelope_cur = 0.0;
-        var envelope_idx = 0;
-        var envelope_increment = envelope.volume / envelope.samples;
-        var envelope_last = envelope.samples;
+        var envelope_idx = -1;
+        var envelope_increment = 0.0;
+        var envelope_last = -1;
         
         // count total samples
         var totalSamples = 0;
@@ -127,14 +130,14 @@ var jsfx = {};
             
             // phase slide calculation
             slide += delta_slide;
-            phase *= slide;
+            phase_speed *= slide;
             
             // envelope processing
-            if( i >= envelope_last ){
+            if( i > envelope_last ){
                 envelope_idx += 1;
-                envelope_cur = envelope.volume;
                 envelope = envelopes[envelope_idx];
-                envelope_increment = (envelope.volume - envelope_cur) / envelope.samples;
+                envelope_cur = envelope.from;
+                envelope_increment = (envelope.to - envelope.from) / envelope.samples;
                 envelope_last += envelope.samples;
             }
             sample *= envelope_cur;
@@ -192,7 +195,7 @@ var jsfx = {};
             len = Parameters.length;
         for (var i = 0; i < len; i += 1) {
             var param = Parameters[i];
-            values[nameToParam(param.name)] = param.node.value;
+            values[nameToParam(param.name)] = parseFloat(param.node.value);
         }
         
         // hack

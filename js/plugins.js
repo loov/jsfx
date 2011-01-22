@@ -1,3 +1,4 @@
+/*
 window.log = function(){
   log.history = log.history || [];   
   log.history.push(arguments);
@@ -12,5 +13,4 @@ window.log = function(){
     if (/docwriteregexwhitelist/.test(q)) write.apply(doc,arguments);  
   };
 })(document);
-
-
+*/
