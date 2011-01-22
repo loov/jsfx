@@ -11,11 +11,11 @@ var jsfx = {};
             Parameters.push(param);
         };
         
-        ap("Master Volume",  0, 1, 0.3);
+        ap("Master Volume",  0, 1, 0.4);
         grp++;
         
         ap("Attack Time",    0, 1, 0.1); // seconds
-        ap("Sustain Time",   0, 2, 2); // seconds
+        ap("Sustain Time",   0, 2, 0.3); // seconds
         ap("Sustain Punch",  0, 3, 2);
         ap("Decay Time",     0, 2, 1); // seconds
         grp++;
@@ -37,8 +37,8 @@ var jsfx = {};
         ap("Change Speed",  0, 2, 0.1);
         
         grp++;
-        ap("Square Duty", 0, 100, 50);
-        ap("Duty Sweep",  0, 100, 50);
+        ap("Square Duty", 0, 0.5, 0);
+        ap("Square Duty Sweep", -1, 1, 0);
         
         grp++;
         ap("Repeat Speed", 0, 100, 50);
@@ -58,8 +58,9 @@ var jsfx = {};
     this.generate = function(params){
         // useful consts
         var TAU = 2 * Math.PI;
-        //var SampleRate = audio.SampleRate * 4;
         var SampleRate = audio.SampleRate;
+        // super sampling
+        // SampleRate = SampleRate * 4;
         
         // useful functions
         var sin = Math.sin;
@@ -97,6 +98,10 @@ var jsfx = {};
         var generator = params.generator;
         var generator_A = 0;
         var generator_B = 0;
+        
+        // square generator
+        generator_A = params.SquareDuty;
+        square_sweep = params.SquareDutySweep / SampleRate;
         
         // phase calculation
         var phase = 0;
@@ -137,20 +142,25 @@ var jsfx = {};
         for(var _i = 0; _i < phaser_max; _i++)
             phaser_buffer[_i] = 0;
         var phaser_pos = 0;
-        var phaser_offset = Math.pow(params.PhaserOffset, 2.0) * (phaser_max - 3);
+        var phaser_offset = Math.pow(params.PhaserOffset, 2.0) * (phaser_max - 4);
         var phaser_offset_slide = Math.pow(params.PhaserSweep, 3.0) * 4000 / SampleRate;
         var phaser_enabled = (Math.abs(phaser_offset_slide) > 0.00001) ||
                              (Math.abs(phaser_offset) > 0.00001);
-        console.debug(phaser_offset);
-        console.debug(phaser_offset_slide);
-        console.debug(phaser_enabled);
-        
+
         // master volume controller
         var master_volume = params.MasterVolume;
         
         for(var i = 0; i < totalSamples; i++){
             // main generator
             sample = generator(phase, generator_A, generator_B);
+            
+            // square generator
+            generator_A += square_sweep;
+            if(generator_A < 0.0){
+                generator_A = 0.0;
+            } else if (generator_A > 0.5){
+                generator_A = 0.5;
+            }
             
             // phase calculation
             phase += phase_speed;
@@ -230,11 +240,14 @@ var jsfx = {};
             out[i] = sample;
         }
         
-        /*var tn = (totalSamples/4)|0;
+        /* super sampling
+        var tn = (totalSamples/4)|0;
         var rout = new Array(tn);
         for(var i = 0 ; i < tn; i++){
             rout[i] = (out[i*4] + out[i*4 + 1] + out[i*4 + 2] + out[i*4 + 3]) / 4;
-        }*/
+        }
+        out = rout;
+        // */
         return out;
     }
     

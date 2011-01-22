@@ -156,8 +156,8 @@ var audio = {};
         noise  : Math.random,
         sine   : Math.sin,
         synth  : function(phase){return sin(phase) + .5*sin(phase/2) + .3*sin(phase/4)},
-        saw    : function(phase){return 2*(phase/2 - ((phase/2 + .5)|0))},
-        square : function(phase,A){return sin(phase) > A ? 1 : sin(phase) < A ? -1 : A}
+        saw    : function(phase){return (phase/8 - ((phase/8 + 0.125)|0))},
+        square : function(phase,A){return sin(phase) > A ? 0.5 : sin(phase) < A ? -0.5 : A}
     };
     var generators = this.generators;
     
@@ -166,6 +166,6 @@ var audio = {};
         sine   : function(count, freq){ return generate(count, freq, generators.sine) },
         synth  : function(count, freq){ return generate(count, freq, generators.synth) },
         saw    : function(count, freq){ return generate(count, freq, generators.saw) },
-        square : function(count, freq){ return generate(count, freq, generators.square) }
+        square : function(count, freq, A){ return generate(count, freq, generators.square, A) }
     };
 }).apply(audio);
