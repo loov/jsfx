@@ -20,9 +20,9 @@ var jsfx = {};
         ap("Decay Time",     0, 2, 1); // seconds
         grp++;
         
-        ap("Min Frequency",   20, 2000, 0);
-        ap("Start Frequency", 20, 2000, 440);
-        ap("Max Frequency",   20, 2000, 2000);
+        ap("Min Frequency",   20, 2400, 0);
+        ap("Start Frequency", 20, 2400, 440);
+        ap("Max Frequency",   20, 2400, 2000);
         ap("Slide",           -1, 1, 0);
         ap("Delta Slide",     -1, 1, 0);
         
@@ -33,8 +33,8 @@ var jsfx = {};
         ap("Vibrato Frequency Slide", -1, 1, 0);
         
         grp++;
-        ap("Change Amount", 0, 100, 50);
-        ap("Change Speed",  0, 100, 50);
+        ap("Change Amount", -12, 12, 0);
+        ap("Change Speed",  0, 2, 0.1);
         
         grp++;
         ap("Square Duty", 0, 100, 50);
@@ -121,6 +121,13 @@ var jsfx = {};
         var slide = 1.0 + Math.pow(params.Slide, 3.0) * 3.0 / SampleRate;
         var delta_slide = Math.pow(params.DeltaSlide, 3.0) / (SampleRate * 1000);
         
+        // arpeggiator
+        var arpeggiator_time = 0;
+        var arpeggiator_limit = params.ChangeSpeed * SampleRate;
+        var arpeggiator_mod   = 1 + (params.ChangeAmount | 0) / 12.0;
+        console.debug(arpeggiator_mod);
+        
+        
         // master volume controller
         var master_volume = params.MasterVolume;
         
@@ -134,6 +141,14 @@ var jsfx = {};
             // phase slide calculation
             slide += delta_slide;
             phase_speed *= slide;
+            
+            // arpeggiator
+            if ( arpeggiator_time > arpeggiator_limit ){
+                phase_speed *= arpeggiator_mod;
+                arpeggiator_time = 0;
+                // arpeggiator_limit = totalSamples * 2;
+            }
+            arpeggiator_time += 1;
             
             // frequency limiter
             if (phase_speed > phase_max_speed){
@@ -163,7 +178,8 @@ var jsfx = {};
             // envelope processing
             if( i > envelope_last ){
                 envelope_idx += 1;
-                envelope = envelopes[envelope_idx];
+                if(envelope_idx < envelopes_len) // fault protection
+                    envelope = envelopes[envelope_idx];
                 envelope_cur = envelope.from;
                 envelope_increment = (envelope.to - envelope.from) / envelope.samples;
                 envelope_last += envelope.samples;
