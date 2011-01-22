@@ -1,4 +1,3 @@
-/*
 window.log = function(){
   log.history = log.history || [];   
   log.history.push(arguments);
@@ -6,6 +5,7 @@ window.log = function(){
     console.log( Array.prototype.slice.call(arguments) );
   }
 };
+
 (function(doc){
   var write = doc.write;
   doc.write = function(q){ 
@@ -13,4 +13,3 @@ window.log = function(){
     if (/docwriteregexwhitelist/.test(q)) write.apply(doc,arguments);  
   };
 })(document);
-*/
