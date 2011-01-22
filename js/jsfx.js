@@ -185,16 +185,22 @@ var jsfx = {};
         return out;
     }
     
-    this.createTable = function (id) {
+    this.createConfigurationPanel = function (id) {
         this.loadParameters();
         var frag = document.createDocumentFragment(),
             len = Parameters.length,
-            lastgroup = 0;
+            lastgroup = undefined;
+        var group;
         for (var i = 0; i < len; i += 1) {
             var param = Parameters[i],
                 row = document.createElement("tr"),
                 fld = document.createElement("td"),
                 input = document.createElement("input");
+            if (param.group !== lastgroup) {
+                group = document.createElement("table");
+                frag.appendChild(group);
+                lastgroup = param.group;
+            }
             // add caption
             fld.appendChild(document.createTextNode(param.name));
             row.appendChild(fld);
@@ -205,18 +211,13 @@ var jsfx = {};
             input.min  = param.min;
             input.max  = param.max;
             input.value = param.def;
-            param.node = input;
+            param.node = input;            
             fld.appendChild(input);
-            row.appendChild(fld);
-            frag.appendChild(row);
-            
-            if (param.group !== lastgroup) {
-                row.className += 'line';
-            }
-            lastgroup = param.group;
+            row.appendChild(fld);            
+            group.appendChild(row);
         }
-        var paramtable = document.getElementById("param-table");
-        paramtable.appendChild(frag);
+        var confpanel = document.getElementById(id);
+        confpanel.appendChild(frag);
     };
 
     var nameToParam = function(name){
@@ -284,11 +285,11 @@ var jsfx = {};
     
     this.play = function(){
         var params = this.getParams();
-        log('generate');
+        logreset();        
         var data = this.generate(params);
-        log('make wave');
+        log('generate');
         var wave = audio.make(data);
-        log('play');
+        log('make wave');
         wave.play();
         return wave;
     }

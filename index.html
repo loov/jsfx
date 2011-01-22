@@ -15,30 +15,43 @@
   
   <link rel="stylesheet" href="css/typography.css">
   <style>
-    #param-table {
-      border-collapse : collapse;
-      table-layout : auto;
-      width : auto;
+    #container {
+      padding-top  : 40px;
+      padding-left : 40px;
     }
     
-    #param-table input {
+    #config-panel {
+      -moz-column-width: 250px;
+      -moz-column-gap: 20px;
+      -moz-column-rule: 1px dashed black;      
+      -webkit-column-width: 250px;
+      -webkit-column-gap: 20px;
+      -webkit-column-rule: 1px dashed black;      
+      height : 300px;
+    }
+    
+    #config-panel table {
+      background-color: #ffe;
+      border: 1px dashed #333;
+      border-collapse : collapse;
+      table-layout : auto;
+      width : 100%;
+    }
+    
+    #config-panel table:nth-child(3), #config-panel table:nth-child(7) {
+      -moz-column-break-after: always;
+      -webkit-column-break-after: always;
+    }
+    
+    #config-panel table input {
       height : 18px;
     }
     
-    #param-table td, #param-table tr {
-      padding : 0;
-      margin  : 0;
-    }
-    
-    #param-table tr.line{
-      border-top: 2px solid #000;
+    #config-panel table td, #config-panel table tr {
+      padding : 1px;
+      margin : 1px;
     }
   </style>
-  <script>
-  function log(msg){
-    console.debug(msg);
-  }
-  </script>
   <script src="js/audio.js"></script>
   <script src="js/libs/modernizr-1.6.min.js"></script>
 </head>
@@ -64,7 +77,7 @@
         <input type="radio" name="generator" value="noise" />noise
         <input type="radio" name="generator" value="synth" />synth<br />        
       </form>
-      <table id="param-table"></table>
+      <div id="config-panel"></div>
     </div>
     
     <div id="spacer"></div>
@@ -74,7 +87,7 @@
   </div> <!-- end of #container -->
 
   <script src="js/jsfx.js"></script>
-  <script>jsfx.createTable("param-table");</script>
+  <script>jsfx.createConfigurationPanel("config-panel");</script>
   <!-- scripts concatenated and minified via ant build script-->
   <script src="js/plugins.js"></script>
   <script src="js/script.js"></script>
