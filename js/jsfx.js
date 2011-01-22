@@ -261,7 +261,7 @@ var jsfx = {};
     
     this.randomize = function(){
         var len = Parameters.length;
-        for (var i = 0; i < len; i++) {
+        for (var i = 1; i < len; i++) {
             var param = Parameters[i];
             if( param.group === -1 ) continue;
             param.node.value = param.min + (param.max - param.min) * Math.random();
