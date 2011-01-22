@@ -41,7 +41,7 @@ var jsfx = {};
         ap("Square Duty Sweep", -1, 1, 0);
         
         grp++;
-        ap("Repeat Speed", 0, 100, 50);
+        ap("Repeat Speed", 0, 0.8, 0);
         
         grp++;
         ap("Phaser Offset", -1, 1, 0);
@@ -107,6 +107,10 @@ var jsfx = {};
         var phase = 0;
         var phase_speed = params.StartFrequency * TAU / SampleRate;
         
+        // phase slide calculation
+        var phase_slide = 1.0 + Math.pow(params.Slide, 3.0) * 3.0 / SampleRate;
+        var phase_delta_slide = Math.pow(params.DeltaSlide, 3.0) / (SampleRate * 1000);
+        
         // frequency limiter
         if(params.MinFrequency > params.StartFrequency)
             params.MinFrequency = params.StartFrequency;
@@ -126,10 +130,6 @@ var jsfx = {};
         var vibrato_phase_slide = 1.0 + Math.pow(params.VibratoFrequencySlide, 3.0) * 3.0 / SampleRate;
         var vibrato_amplitude_slide = params.VibratoDepthSlide / SampleRate;
         
-        // slide calculation
-        var slide = 1.0 + Math.pow(params.Slide, 3.0) * 3.0 / SampleRate;
-        var delta_slide = Math.pow(params.DeltaSlide, 3.0) / (SampleRate * 1000);
-        
         // arpeggiator
         var arpeggiator_time = 0;
         var arpeggiator_limit = params.ChangeSpeed * SampleRate;
@@ -146,13 +146,38 @@ var jsfx = {};
         var phaser_offset_slide = Math.pow(params.PhaserSweep, 3.0) * 4000 / SampleRate;
         var phaser_enabled = (Math.abs(phaser_offset_slide) > 0.00001) ||
                              (Math.abs(phaser_offset) > 0.00001);
-
+        
+        // repeat
+        var repeat_time  = 0;
+        console.debug(params.RepeatSpeed);
+        var repeat_limit = totalSamples;
+        if (params.RepeatSpeed > 0){
+            repeat_limit = Math.pow(1 - params.RepeatSpeed, 2.0) * SampleRate + 32;
+        }
+        
         // master volume controller
         var master_volume = params.MasterVolume;
         
         for(var i = 0; i < totalSamples; i++){
             // main generator
             sample = generator(phase, generator_A, generator_B);
+            
+            if( repeat_time > repeat_limit ){
+                // do a reset
+                // phase reset
+                var phase = 0;
+                var phase_speed = params.StartFrequency * TAU / SampleRate;
+                // phase slide reset
+                var phase_slide = 1.0 + Math.pow(params.Slide, 3.0) * 3.0 / SampleRate;
+                var phase_delta_slide = Math.pow(params.DeltaSlide, 3.0) / (SampleRate * 1000);
+                // arpeggiator reset
+                var arpeggiator_time = 0;
+                var arpeggiator_limit = params.ChangeSpeed * SampleRate;
+                var arpeggiator_mod   = 1 + (params.ChangeAmount | 0) / 12.0;                
+                // repeat reset
+                repeat_time = 0;
+            }
+            repeat_time += 1;
             
             // square generator
             generator_A += square_sweep;
@@ -166,14 +191,13 @@ var jsfx = {};
             phase += phase_speed;
             
             // phase slide calculation
-            slide += delta_slide;
-            phase_speed *= slide;
+            phase_slide += phase_delta_slide;
+            phase_speed *= phase_slide;
             
             // arpeggiator
             if ( arpeggiator_time > arpeggiator_limit ){
                 phase_speed *= arpeggiator_mod;
-                arpeggiator_time = 0;
-                // arpeggiator_limit = totalSamples * 2;
+                arpeggiator_limit = totalSamples;
             }
             arpeggiator_time += 1;
             
