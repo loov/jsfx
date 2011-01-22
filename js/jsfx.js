@@ -22,12 +22,13 @@ var jsfx = {};
         ap("Sustain Punch",  0, 3, 2, 0);
         ap("Decay Time",     0, 2, 1, 0); // seconds
         
-        ap("Start Frequency", 20, 2000, 440, 1);
         ap("Min Frequency",   20, 2000, 440, 1);
+        ap("Start Frequency", 20, 2000, 440, 1);
+        ap("Max Frequency",   20, 2000, 440, 1);
         ap("Slide",           -1, 1, 0, 1);
         ap("Delta Slide",     -1, 1, 0, 1);
-        ap("Vibrato Depth",   0, 100, 50, 1);
-        ap("Vibrato Speed",   0, 100, 50, 1);
+        ap("Vibrato Depth",    0, 1, 0.1, 1);
+        ap("Vibrato Frequency", 0.01, 48, 1, 1);
         
         ap("Change Amount", 0, 100, 50, 2);
         ap("Change Speed",  0, 100, 50, 2);
@@ -77,11 +78,10 @@ var jsfx = {};
         
         // enveloping initialization
         var _ss = 1.0 + params.SustainPunch;
-        console.debug(_ss);
         var envelopes = [ {from: 0.0, to: 1.0, time: params.AttackTime},
                           {from: _ss, to: 1.0, time: params.SustainTime},
                           {from: 1.0, to: 0.0, time: params.DecayTime}];
-        var envelopes_len = envelopes.length;        
+        var envelopes_len = envelopes.length;
         
         // envelope sample calculation
         for(var i = 0; i < envelopes_len; i++){
@@ -114,6 +114,22 @@ var jsfx = {};
         var phase = 0;
         var phase_speed = params.StartFrequency * TAU / SampleRate;
         
+        // frequency limiter
+        if(params.MinFrequency > params.StartFrequency)
+            params.MinFrequency = params.StartFrequency;
+            
+        if(params.MaxFrequency < params.StartFrequency)
+            params.MaxFrequency = params.StartFrequency;
+        
+        var phase_min_speed = params.MinFrequency * TAU / SampleRate;
+        var phase_max_speed = params.MaxFrequency * TAU / SampleRate;
+        
+        // frequency vibrato
+        var vibrato_phase = 0;
+        var vibrato_phase_speed = params.VibratoFrequency * TAU / SampleRate;
+        var vibrato_amplitude = params.VibratoDepth;
+        var vibrato_phase_mod = 0;
+        
         // slide calculation
         var slide = 1.0 + Math.pow(params.Slide, 3.0) / 1000;
         var delta_slide = params.DeltaSlide * params.DeltaSlide * params.DeltaSlide / 1000000;
@@ -131,6 +147,18 @@ var jsfx = {};
             // phase slide calculation
             slide += delta_slide;
             phase_speed *= slide;
+            
+            // frequency limiter
+            if (phase_speed > phase_max_speed){
+                phase_speed = phase_max_speed;
+            } else if(phase_speed < phase_min_speed){
+                phase_speed = phase_min_speed;
+            }
+            
+            // frequency vibrato
+            vibrato_phase += vibrato_phase_speed;
+            vibrato_phase_mod = phase_speed * Math.sin(vibrato_phase) * vibrato_amplitude;
+            phase += vibrato_phase_mod;
             
             // envelope processing
             if( i > envelope_last ){
