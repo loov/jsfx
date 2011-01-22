@@ -15,7 +15,7 @@ var jsfx = {};
         grp++;
         
         ap("Attack Time",    0, 1, 0.1); // seconds
-        ap("Sustain Time",   0, 2, 0.4); // seconds
+        ap("Sustain Time",   0, 2, 2); // seconds
         ap("Sustain Punch",  0, 3, 2);
         ap("Decay Time",     0, 2, 1); // seconds
         grp++;
@@ -27,7 +27,7 @@ var jsfx = {};
         ap("Delta Slide",     -1, 1, 0);
         
         grp++;
-        ap("Vibrato Depth",     0, 1, 0.1);
+        ap("Vibrato Depth",     0, 1, 0);
         ap("Vibrato Frequency", 0.01, 48, 8);
         ap("Vibrato Depth Slide",   -0.3, 1, 0);
         ap("Vibrato Frequency Slide", -1, 1, 0);
@@ -44,8 +44,8 @@ var jsfx = {};
         ap("Repeat Speed", 0, 100, 50);
         
         grp++;
-        ap("Phaser Offset", 0, 100, 50);
-        ap("Phaser Sweep",  0, 100, 50);
+        ap("Phaser Offset", -1, 1, 0);
+        ap("Phaser Sweep", -1, 1, 0);
         
         grp++;
         ap("LP Filter Cutoff", 0, 100, 50);
@@ -58,7 +58,11 @@ var jsfx = {};
     this.generate = function(params){
         // useful consts
         var TAU = 2 * Math.PI;
+        //var SampleRate = audio.SampleRate * 4;
         var SampleRate = audio.SampleRate;
+        
+        // useful functions
+        var sin = Math.sin;
         
         // enveloping initialization
         var _ss = 1.0 + params.SustainPunch;
@@ -125,8 +129,21 @@ var jsfx = {};
         var arpeggiator_time = 0;
         var arpeggiator_limit = params.ChangeSpeed * SampleRate;
         var arpeggiator_mod   = 1 + (params.ChangeAmount | 0) / 12.0;
-        console.debug(arpeggiator_mod);
         
+        // phaser
+        var phaser_max = 1024;
+        var phaser_mask = 1023;
+        var phaser_buffer = new Array(phaser_max);
+        for(var _i = 0; _i < phaser_max; _i++)
+            phaser_buffer[_i] = 0;
+        var phaser_pos = 0;
+        var phaser_offset = Math.pow(params.PhaserOffset, 2.0) * (phaser_max - 3);
+        var phaser_offset_slide = Math.pow(params.PhaserSweep, 3.0) * 4000 / SampleRate;
+        var phaser_enabled = (Math.abs(phaser_offset_slide) > 0.00001) ||
+                             (Math.abs(phaser_offset) > 0.00001);
+        console.debug(phaser_offset);
+        console.debug(phaser_offset_slide);
+        console.debug(phaser_enabled);
         
         // master volume controller
         var master_volume = params.MasterVolume;
@@ -159,12 +176,12 @@ var jsfx = {};
             
             // frequency vibrato
             vibrato_phase += vibrato_phase_speed;
-            var _vibrato_phase_mod = phase_speed * Math.sin(vibrato_phase) * vibrato_amplitude;
+            var _vibrato_phase_mod = phase_speed * sin(vibrato_phase) * vibrato_amplitude;
             phase += _vibrato_phase_mod;
             
             // frequency vibrato slide
             vibrato_phase_speed *= vibrato_phase_slide;
-            if(vibrato_amplitude_slide !== 0){
+            if(vibrato_amplitude_slide){
                 vibrato_amplitude += vibrato_amplitude_slide;
                 if(vibrato_amplitude < 0){
                     vibrato_amplitude = 0;
@@ -173,6 +190,25 @@ var jsfx = {};
                     vibrato_amplitude = 1;
                     vibrato_amplitude_slide = 0;
                 }
+            }
+            
+            // phaser
+            if (phaser_enabled) {
+                phaser_offset += phaser_offset_slide;
+                if( phaser_offset < 0){
+                    phaser_offset = -phaser_offset;
+                    phaser_offset_slide = -phaser_offset_slide;
+                }
+                if( phaser_offset > phaser_mask){
+                    phaser_offset = phaser_mask;
+                    phaser_offset_slide = 0;
+                }
+                
+                phaser_buffer[phaser_pos] = sample;
+                // phaser sample modification
+                var _p = (phaser_pos - (phaser_offset|0) + phaser_max) & phaser_mask;
+                sample += phaser_buffer[_p];
+                phaser_pos = (phaser_pos + 1) & phaser_mask;
             }
             
             // envelope processing
@@ -193,6 +229,12 @@ var jsfx = {};
             // prepare for next sample
             out[i] = sample;
         }
+        
+        /*var tn = (totalSamples/4)|0;
+        var rout = new Array(tn);
+        for(var i = 0 ; i < tn; i++){
+            rout[i] = (out[i*4] + out[i*4 + 1] + out[i*4 + 2] + out[i*4 + 3]) / 4;
+        }*/
         return out;
     }
     
