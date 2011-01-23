@@ -7,7 +7,6 @@ var jsfx = {};
         var ap = function (name, min, max, def, step) {
             if (step === undefined)
                 step = (max - min) / 1000;
-            console.debug(step);
             var param = { name: name,
                           min: min, max: max, step:step, def: def, 
                           node: undefined, group: grp};
@@ -161,6 +160,7 @@ var jsfx = {};
         // lowpass filter
         
         // highpass filter
+        
         
         // repeat
         var repeat_time  = 0;
@@ -372,9 +372,10 @@ var jsfx = {};
     
     this.randomize = function(){
         var len = Parameters.length;
-        for (var i = 2; i < len; i++) {
+        for (var i = 0; i < len; i++) {
             var param = Parameters[i];
-            if( param.group === -1 ) continue;
+            if( nameToParam(param.name) === "MasterVolume" ) continue;
+            if( nameToParam(param.name) === "SuperSamplingQuality" ) continue;
             param.node.value = param.min + (param.max - param.min) * Math.random();
         }        
         
