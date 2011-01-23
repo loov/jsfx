@@ -4,9 +4,12 @@ var jsfx = {};
 
     this.loadParameters = function () {
         var grp = 0;
-        var ap = function (name, min, max, def) {
+        var ap = function (name, min, max, def, step) {
+            if (step === undefined)
+                step = (max - min) / 1000;
+            console.debug(step);
             var param = { name: name,
-                          min: min, max: max, def: def,
+                          min: min, max: max, step:step, def: def, 
                           node: undefined, group: grp};
             Parameters.push(param);
         };
@@ -20,9 +23,9 @@ var jsfx = {};
         ap("Decay Time",     0, 2, 1); // seconds
         grp++;
         
-        ap("Min Frequency",   20, 2400, 0);
-        ap("Start Frequency", 20, 2400, 440);
-        ap("Max Frequency",   20, 2400, 2000);
+        ap("Min Frequency",   20, 2400, 0, 1);
+        ap("Start Frequency", 20, 2400, 440, 1);
+        ap("Max Frequency",   20, 2400, 2000, 1);
         ap("Slide",           -1, 1, 0);
         ap("Delta Slide",     -1, 1, 0);
         
@@ -55,7 +58,7 @@ var jsfx = {};
         ap("HP Filter Cutoff Sweep", 0, 100, 50);
         
         grp++;
-        ap("Super Sampling Quality", 0, 16, 0);
+        ap("Super Sampling Quality", 0, 16, 0, 1);
     };
     
     this.generate = function(params){
@@ -315,7 +318,7 @@ var jsfx = {};
             // create sliders
             fld = document.createElement("td");
             input.type = "range";
-            input.step = (param.max - param.min) / 1000.0;
+            input.step = param.step;
             input.min  = param.min;
             input.max  = param.max;
             input.value = param.def;
@@ -369,7 +372,7 @@ var jsfx = {};
     
     this.randomize = function(){
         var len = Parameters.length;
-        for (var i = 1; i < len; i++) {
+        for (var i = 2; i < len; i++) {
             var param = Parameters[i];
             if( param.group === -1 ) continue;
             param.node.value = param.min + (param.max - param.min) * Math.random();
