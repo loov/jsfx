@@ -120,7 +120,7 @@ var jsfx = {};
         var phase_speed = params.StartFrequency * TAU / SampleRate;
         
         // phase slide calculation        
-        var phase_slide = 1.0 + Math.pow(params.Slide, 3.0) * 3.0 / SampleRate;
+        var phase_slide = 1.0 + Math.pow(params.Slide, 3.0) * 64.0 / SampleRate;
         var phase_delta_slide = Math.pow(params.DeltaSlide, 3.0) / (SampleRate * 1000); 
         if (super_sampling_quality !== undefined)
             phase_delta_slide /= super_sampling_quality; // correction
@@ -492,6 +492,8 @@ var jsfx = {};
     
     this.randomSample = function(id){
         var p = this.getResetParams();
+        var gens = ["square", "saw", "sine", "noise"];
+        
         function r(scale, offset){
             var a = Math.random();
             if(scale !== undefined)
@@ -500,17 +502,53 @@ var jsfx = {};
                 a += offset;
             return a;
         }
+        
         if(id === "Pickup/Coin"){
-            p.StartFrequency = r(880, 880);
+            p.StartFrequency = r(880, 660);
             p.SustainTime = r(0.1);
             p.DecayTime = r(0.4, 0.1)
             p.SustainPunch = r(0.3, 0.3);
             if(r() < 0.5){
-                p.ChangeSpeed = r(0.3, 0.1);
+                p.ChangeSpeed = r(0.2, 0.1);
                 p.ChangeAmount = r(0.4, 0.2);
             }
         } else if (id === "Laser/Shoot"){
             
+            var i = r(3)|0;
+            if( (i === 2) && (r() < 0.5) )
+                i = r(2)|0;
+            p.Generator = gens[i];
+            
+            p.StartFrequency = r(1200, 440);
+            p.MinFrequency = p.StartFrequency - r(880, 440);
+            if(p.MinFrequency < 110)
+                p.MinFrequency = 110;
+                
+            p.Slide = r(0.3, -1);
+            
+            if(r() < 0.33){
+                p.StartFrequency = r(880, 440);
+                p.MinFrequency = r(0.1);
+                p.Slide = r(0.3, -0.8);
+            }
+            if(r() < 0.5){
+                p.SquareDuty = r(0.5);
+                p.SquareDutySweep = r(0.2);
+            } else {
+                p.SquareDuty = r(0.5, 0.4);
+                p.SquareDutySweep -= r(0.7);
+            }
+            
+            p.SustainTime = r(0.2, 0.1);
+            p.DecayTime = r(0.4);
+            if( r() < 0.5 )
+                p.SustainPunch = r(0.3);
+            if( r() < 0.33 ){
+                p.PhaserOffset = r(0.2);
+                p.PhaserSweep = r(0.2);
+            }
+            if( r() < 0.5 )
+                p.HPFilterCutoff = r(0.3);
         } else if (id === "Explosion") {
             
         }
