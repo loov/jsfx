@@ -16,8 +16,23 @@
   <link rel="stylesheet" href="css/typography.css">
   <style>
     #container {
-      padding-top  : 40px;
-      padding-left : 40px;
+      margin: 40px;
+      width: 850px;
+    }
+    #button-panel {
+      margin-bottom: 10px;
+      padding: 3px;
+      border: 1px dashed #666;
+    }
+    .button-set {
+      float: left;
+      
+      padding-left: 20px;
+      margin-left: 20px;
+      border-left: 1px dotted #666;
+    }
+    .clear {
+      clear : both;
     }
     
     #config-panel {
@@ -68,11 +83,19 @@
     </header>
     
     <div id="main">
-      <h2>Parameters</h2>
-      <div>
-        <button caption="reset" onclick="jsfx.reset()">Reset</button>
-        <button caption="randomize" onclick="jsfx.randomize()">Randomize</button>
-        <button caption="play" onclick="jsfx.play()">Play</button>
+      <h2>Parameters:</h2>
+      <div id="button-panel">
+        <div class="button-set">
+          <button onclick="jsfx.reset()">Reset</button>
+          <button onclick="jsfx.randomize()">Randomize</button>
+          <button onclick="jsfx.play()">Play</button>
+        </div>
+        <div class="button-set">
+          <button onclick="jsfx.randomSample('A')">A</button>
+          <button onclick="jsfx.randomSample('B')">B</button>
+          <button onclick="jsfx.randomSample('C')">C</button>
+        </div>
+        <div class="clear"></div>
       </div>
       <div id="config-panel">
         <form id="generators">

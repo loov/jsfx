@@ -147,6 +147,10 @@ var jsfx = {};
         var phaser_enabled = (Math.abs(phaser_offset_slide) > 0.00001) ||
                              (Math.abs(phaser_offset) > 0.00001);
         
+        // lowpass filter
+        
+        // highpass filter
+        
         // repeat
         var repeat_time  = 0;
         console.debug(params.RepeatSpeed);
@@ -163,7 +167,6 @@ var jsfx = {};
             sample = generator(phase, generator_A, generator_B);
             
             if( repeat_time > repeat_limit ){
-                // do a reset
                 // phase reset
                 var phase = 0;
                 var phase_speed = params.StartFrequency * TAU / SampleRate;
