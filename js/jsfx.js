@@ -82,9 +82,8 @@ var jsfx = {};
         
         // envelope sample calculation
         for(var i = 0; i < envelopes_len; i++){
-            envelopes[i].samples = (envelopes[i].time * SampleRate) | 0
+            envelopes[i].samples = 1 + ((envelopes[i].time * SampleRate) | 0)
         }
-        
         // envelope loop variables
         var envelope = undefined;
         var envelope_cur = 0.0;
@@ -97,8 +96,8 @@ var jsfx = {};
         for(var i = 0; i < envelopes_len; i++){
             totalSamples += envelopes[i].samples;
         }
-        
-        if( totalSamples < SampleRate / 4){
+        // fix totalSample limit
+        if( totalSamples < SampleRate / 2){
             totalSamples = SampleRate / 2;
         }
         
@@ -552,14 +551,12 @@ var jsfx = {};
         } else if (id === "Explosion") {
             p.Generator = "noise";
             if(r() < 0.5){
-                p.StartFrequency = r(440, 110);
+                p.StartFrequency = r(440, 40);
                 p.Slide = r(0.4, -0.1);
             } else {
-                p.StartFrequency = r(1200, 220);
+                p.StartFrequency = r(1600, 220);
                 p.Slide = r(-0.2, -0.2);
             }
-            
-            p.StartFrequency = Math.sqrt(p.StartFrequency);
             
             if( r() < 0.2 )
                 p.Slide = 0;
