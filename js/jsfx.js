@@ -50,11 +50,11 @@ var jsfx = {};
         ap("Phaser Sweep", -1, 1, 0);
         
         grp++;
-        ap("LP Filter Cutoff", 0, 1, 0);
+        ap("LP Filter Cutoff", 0, 1, 1);
         ap("LP Filter Cutoff Sweep", -1, 1, 0);
-        ap("LP Filter Resonance",    0, 100, 50);
-        ap("HP Filter Cutoff",       0, 1, 1);
-        ap("HP Filter Cutoff Sweep", -1, 1, -0.5);
+        ap("LP Filter Resonance",    0, 1, 0);
+        ap("HP Filter Cutoff",       0, 1, 0);
+        ap("HP Filter Cutoff Sweep", -1, 1, 0);
         
         grp++;
         ap("Super Sampling Quality", 0, 16, 0, 1);
@@ -158,18 +158,23 @@ var jsfx = {};
                              (Math.abs(phaser_offset) > 0.00001);
         
         // lowpass filter
-        var filters_enabled = (params.HPFilterCutoff < 0.99) || (params.LPFilterCutoff > 0.01);
+        var filters_enabled = (params.HPFilterCutoff > 0.001) || (params.LPFilterCutoff < 0.999);
+        
         var lowpass_pos = 0;
         var lowpass_pos_slide = 0;
         var lowpass_cutoff = Math.pow(params.LPFilterCutoff, 3.0) / 10;
-        var lowpass_cutoff_slide = 1.0;
-        var lowpass_damping = 0.2;
-        var lowpass_enabled = params.LPFilterCutoff < 0.99;
+        var lowpass_cutoff_slide = 1.0 + params.HPFilterCutoffSweep / 10000;
+        var lowpass_damping = 5.0 / (1.0 + Math.pow(params.LPFilterResonance, 2) * 20 ) *
+                                    (0.01 + params.LPFilterCutoff);
+        if ( lowpass_damping > 0.8)
+            lowpass_damping = 0.8;
+        lowpass_damping = 1.0 - lowpass_damping;
+        var lowpass_enabled = params.LPFilterCutoff < 0.999;
         
         // highpass filter
         var highpass_pos = 0;
-        var highpass_cutoff = Math.pow(params.HPFilterCutoff, 2.0) * 0.1;
-        var highpass_cutoff_slide = 1.0 + params.HPFilterCutoffSweep * 4 / SampleRate;
+        var highpass_cutoff = Math.pow(params.HPFilterCutoff, 2.0) / 10;
+        var highpass_cutoff_slide = 1.0 + params.HPFilterCutoffSweep / 10000;
         
         // repeat
         var repeat_time  = 0;
@@ -250,28 +255,17 @@ var jsfx = {};
                 }
             }
             
-            // phaser
-            if (phaser_enabled) {
-                phaser_offset += phaser_offset_slide;
-                if( phaser_offset < 0){
-                    phaser_offset = -phaser_offset;
-                    phaser_offset_slide = -phaser_offset_slide;
-                }
-                if( phaser_offset > phaser_mask){
-                    phaser_offset = phaser_mask;
-                    phaser_offset_slide = 0;
-                }
-                
-                phaser_buffer[phaser_pos] = sample;
-                // phaser sample modification
-                var _p = (phaser_pos - (phaser_offset|0) + phaser_max) & phaser_mask;
-                sample += phaser_buffer[_p];
-                phaser_pos = (phaser_pos + 1) & phaser_mask;
-            }
-            
-            /*
             // filters
             if( filters_enabled ){
+                
+                if( Math.abs(highpass_cutoff) > 0.001){
+                    highpass_cutoff *= highpass_cutoff_slide;
+                    if(highpass_cutoff < 0.00001){
+                        highpass_cutoff = 0.00001;
+                    } else if(highpass_cutoff > 0.1){
+                        highpass_cutoff = 0.1;
+                    }
+                }
                 
                 var _lowpass_pos_old = lowpass_pos;
                 lowpass_cutoff *= lowpass_cutoff_slide;
@@ -291,8 +285,27 @@ var jsfx = {};
                 
                 highpass_pos += lowpass_pos - _lowpass_pos_old;
                 highpass_pos *= 1.0 - highpass_cutoff;
-                sample = highpass_pos;
-            }*/
+                sample = highpass_pos;  
+            }
+            
+            // phaser
+            if (phaser_enabled) {
+                phaser_offset += phaser_offset_slide;
+                if( phaser_offset < 0){
+                    phaser_offset = -phaser_offset;
+                    phaser_offset_slide = -phaser_offset_slide;
+                }
+                if( phaser_offset > phaser_mask){
+                    phaser_offset = phaser_mask;
+                    phaser_offset_slide = 0;
+                }
+                
+                phaser_buffer[phaser_pos] = sample;
+                // phaser sample modification
+                var _p = (phaser_pos - (phaser_offset|0) + phaser_max) & phaser_mask;
+                sample += phaser_buffer[_p];
+                phaser_pos = (phaser_pos + 1) & phaser_mask;
+            }
             
             // envelope processing
             if( i > envelope_last ){
