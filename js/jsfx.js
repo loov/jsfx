@@ -53,14 +53,20 @@ var jsfx = {};
         ap("LP Filter Resonance",    0, 100, 50);
         ap("HP Filter Cutoff",       0, 100, 50);
         ap("HP Filter Cutoff Sweep", 0, 100, 50);
-    };
         
+        grp++;
+        ap("Super Sampling Quality", 0, 16, 0);
+    };
+    
     this.generate = function(params){
         // useful consts
         var TAU = 2 * Math.PI;
         var SampleRate = audio.SampleRate;
+        
         // super sampling
-        // SampleRate = SampleRate * 4;
+        var super_sampling_quality = params.SuperSamplingQuality | 0;
+        if(super_sampling_quality < 1) super_sampling_quality = 1;
+        SampleRate = SampleRate * super_sampling_quality;
         
         // useful functions
         var sin = Math.sin;
@@ -107,9 +113,11 @@ var jsfx = {};
         var phase = 0;
         var phase_speed = params.StartFrequency * TAU / SampleRate;
         
-        // phase slide calculation
+        // phase slide calculation        
         var phase_slide = 1.0 + Math.pow(params.Slide, 3.0) * 3.0 / SampleRate;
-        var phase_delta_slide = Math.pow(params.DeltaSlide, 3.0) / (SampleRate * 1000);
+        var phase_delta_slide = Math.pow(params.DeltaSlide, 3.0) / (SampleRate * 1000); 
+        if (super_sampling_quality !== undefined)
+            phase_delta_slide /= super_sampling_quality; // correction
         
         // frequency limiter
         if(params.MinFrequency > params.StartFrequency)
@@ -153,7 +161,6 @@ var jsfx = {};
         
         // repeat
         var repeat_time  = 0;
-        console.debug(params.RepeatSpeed);
         var repeat_limit = totalSamples;
         if (params.RepeatSpeed > 0){
             repeat_limit = Math.pow(1 - params.RepeatSpeed, 2.0) * SampleRate + 32;
@@ -173,6 +180,8 @@ var jsfx = {};
                 // phase slide reset
                 var phase_slide = 1.0 + Math.pow(params.Slide, 3.0) * 3.0 / SampleRate;
                 var phase_delta_slide = Math.pow(params.DeltaSlide, 3.0) / (SampleRate * 1000);
+                if (super_sampling_quality !== undefined)
+                    phase_delta_slide /= super_sampling_quality; // correction
                 // arpeggiator reset
                 var arpeggiator_time = 0;
                 var arpeggiator_limit = params.ChangeSpeed * SampleRate;
@@ -267,14 +276,20 @@ var jsfx = {};
             out[i] = sample;
         }
         
-        /* super sampling
-        var tn = (totalSamples/4)|0;
-        var rout = new Array(tn);
-        for(var i = 0 ; i < tn; i++){
-            rout[i] = (out[i*4] + out[i*4 + 1] + out[i*4 + 2] + out[i*4 + 3]) / 4;
+        // super sampling
+        if(super_sampling_quality > 1){
+            var smooth_totalSamples = (totalSamples/super_sampling_quality)|0;
+            var smooth_out = new Array(smooth_totalSamples);
+            for(var i = 0 ; i < smooth_totalSamples; i++){
+                smooth_out[i] = 0;
+                var b = i * super_sampling_quality;
+                for(var z = 0; z < super_sampling_quality; z++)
+                    smooth_out[i] += out[b + z];
+                smooth_out[i] /= super_sampling_quality;
+            }
+            out = smooth_out;
         }
-        out = rout;
-        // */
+        
         return out;
     }
     
@@ -366,6 +381,10 @@ var jsfx = {};
         generators[i].checked = true;
         
         this.play();
+    }
+    
+    this.randomSample = function(id){
+        // this should randomize based on some values
     }
     
     this.reset = function () {
