@@ -35,8 +35,8 @@ var jsfx = {};
         ap("Vibrato Frequency Slide", -1, 1, 0);
         
         grp++;
-        ap("Change Amount", -12, 12, 0);
-        ap("Change Speed",  0, 2, 0.1);
+        ap("Change Amount", -1, 1, 0);
+        ap("Change Speed",  0, 1, 0.1);
         
         grp++;
         ap("Square Duty", 0, 0.5, 0);
@@ -98,6 +98,10 @@ var jsfx = {};
             totalSamples += envelopes[i].samples;
         }
         
+        if( totalSamples < SampleRate / 4){
+            totalSamples = SampleRate / 2;
+        }
+        
         // out data samples
         var out = new Array(totalSamples);
         var sample = 0;
@@ -143,7 +147,11 @@ var jsfx = {};
         // arpeggiator
         var arpeggiator_time = 0;
         var arpeggiator_limit = params.ChangeSpeed * SampleRate;
-        var arpeggiator_mod   = 1 + (params.ChangeAmount | 0) / 12.0;
+        var arpeggiator_mod   = Math.pow(params.ChangeAmount, 2);
+        if (params.ChangeAmount > 0)
+            arpeggiator_mod = 1 + arpeggiator_mod * 10;
+        else
+            arpeggiator_mod = 1 - arpeggiator_mod * 0.9;
         
         // phaser
         var phaser_max = 1024;
@@ -172,7 +180,7 @@ var jsfx = {};
         var lowpass_enabled = params.LPFilterCutoff < 0.999;
         
         // highpass filter
-        var highpass_pos = 0;
+        var highpass_accumulator = 0;
         var highpass_cutoff = Math.pow(params.HPFilterCutoff, 2.0) / 10;
         var highpass_cutoff_slide = 1.0 + params.HPFilterCutoffSweep / 10000;
         
@@ -283,9 +291,9 @@ var jsfx = {};
                 }
                 lowpass_pos += lowpass_pos_slide;
                 
-                highpass_pos += lowpass_pos - _lowpass_pos_old;
-                highpass_pos *= 1.0 - highpass_cutoff;
-                sample = highpass_pos;  
+                highpass_accumulator += lowpass_pos - _lowpass_pos_old;
+                highpass_accumulator *= 1.0 - highpass_cutoff;
+                sample = highpass_accumulator;  
             }
             
             // phaser
@@ -312,8 +320,10 @@ var jsfx = {};
                 envelope_idx += 1;
                 if(envelope_idx < envelopes_len) // fault protection
                     envelope = envelopes[envelope_idx];
+                else // the trailing envelope is silence
+                    envelope = {from: 0, to: 0, samples: totalSamples};
                 envelope_cur = envelope.from;
-                envelope_increment = (envelope.to - envelope.from) / envelope.samples;
+                envelope_increment = (envelope.to - envelope.from) / (envelope.samples + 1);
                 envelope_last += envelope.samples;
             }
             sample *= envelope_cur;
@@ -407,6 +417,14 @@ var jsfx = {};
     this.setParams = function (params) {
         var len = Parameters.length;
         for (var e in params){
+            if (e === "Generator") {
+                var generators = document.getElementById("generators").generator;
+                for(var i = 0; i < generators.length; i++){
+                    if(generators[i].value === params[e])
+                        generators[i].checked = true;
+                }
+                continue;
+            }
             for (var i = 0; i < len; i += 1){
                 var param = Parameters[i];
                 if( nameToParam(param.name) === e ){
@@ -434,7 +452,70 @@ var jsfx = {};
         this.play();
     }
     
+    this.getResetParams = function(){
+        var p = {};
+        p.Generator = "square";
+        p.StartFrequency = 880.0;
+        p.MinFrequency = 20.0;
+        p.MaxFrequency = 2400.0;
+        p.Slide = 0.0;
+        p.DeltaSlide = 0.0;
+        p.SquareDuty = 0.0;
+        p.SquareDutySweep = 0.0;
+        
+        p.VibratoDepth = 0.0;
+        p.VibratoFrequency = 0.0;
+        p.VibratoDepthSlide = 0.0;
+        p.VibratoFrequencySlide = 0.0;
+        
+        p.AttackTime = 0.0;
+        p.SustainTime = 0.3;
+        p.DecayTime = 0.4;
+        p.SustainPunch = 0.0;
+        
+        p.LPFilterResonance = 0.0;
+        p.LPFilterCutoff = 1.0;
+        p.LPFilterCutoffSweep = 0.0;
+        p.HPFilterCutoff = 0.0;
+        p.HPFilterCutoffSweep = 0.0;
+        
+        p.PhaserOffset = 0.0;
+        p.PhaserSweep = 0.0;
+        
+        p.RepeatSpeed = 0.0;
+        
+        p.ChangeAmount = 0.0;
+        p.ChangeSpeed = 0.0;
+        
+        return p;
+    }
+    
     this.randomSample = function(id){
+        var p = this.getResetParams();
+        function r(scale, offset){
+            var a = Math.random();
+            if(scale !== undefined)
+                a *= scale;
+            if(offset !== undefined)
+                a += offset;
+            return a;
+        }
+        if(id === "Pickup/Coin"){
+            p.StartFrequency = r(880, 880);
+            p.SustainTime = r(0.1);
+            p.DecayTime = r(0.4, 0.1)
+            p.SustainPunch = r(0.3, 0.3);
+            if(r() < 0.5){
+                p.ChangeSpeed = r(0.3, 0.1);
+                p.ChangeAmount = r(0.4, 0.2);
+            }
+        } else if (id === "Laser/Shoot"){
+            
+        } else if (id === "Explosion") {
+            
+        }
+        this.setParams(p);
+        this.play();
         // this should randomize based on some values
     }
     
