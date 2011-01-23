@@ -579,6 +579,68 @@ var jsfx = {};
                 p.ChangeSpeed = r(0.3, 0.6);
                 p.ChangeAmount = r(-1.6, 0.8);
             }
+        } else if (id === "Powerup"){
+            if(r() < 0.5){
+                p.Generator = 'saw'
+            } else {
+                p.SquareDuty = r(0.6);
+            }
+            
+            p.StartFrequency = r(220, 440);
+            if(r() < 0.5 ){
+                p.Slide = r(0.5, 0.2);
+                p.RepeatSpeed = r(0.4, 0.4);
+            } else {
+                p.Slide = r(0.2, 0.05);
+                if (r() < 0.5){
+                    p.VibratoDepth = r(0.6, 0.1);
+                    p.VibratoFrequency = r(30,10);
+                }
+            }
+            p.SustainTime = r(0.4);
+            p.DecayTime = r(0.4, 0.1);
+        } else if (id === "Hit/Hurt"){
+            var i = r(3) | 0;
+            if(i === 2)
+                i = 3;
+            else if( i === 0)
+                p.SquareDuty = r(0.6);
+            p.Generator = gens[i];
+            
+            p.StartFrequency = r(880, 220);
+            p.Slide = -r(0.4, 0.3);
+            
+            p.SustainTime = r(0.1);
+            p.DecayTime = r(0.2, 0.1);
+            
+            if(r() < 0.5)
+                p.HPFilterCutoff = r(0.3);
+        } else if (id === "Jump"){
+            p.Generator = "Square";
+            
+            p.SquareDuty = r(0.6);
+            p.StartFrequency = r(330, 330);
+            p.Slide = r(0.4, 0.2);
+            
+            p.SustainTime = r(0.3, 0.1);
+            p.DecayTime = r(0.2, 0.1);
+            
+            if(r() < 0.5){
+                p.HPFilterCutoff = r(0.3);
+            }
+            if(r() < 0.5){
+                p.LPFilterCutoff = r(-0.6, 1);
+            }
+        } else if (id === "Blip/Select"){
+            var i = r(2)|0;
+            if(i === 0)
+                p.SquareDuty = r(0.6);
+            p.Generator = gens[i];
+            p.StartFrequency = r(660, 220);
+            
+            p.SustainTime = r(0.1, 0.1);
+            p.DecayTime = r(0.2);
+            p.HPFilterCutoff = 0.1;
         }
         this.setParams(p);
         this.play();
