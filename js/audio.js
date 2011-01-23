@@ -151,9 +151,17 @@ var audio = {};
         return out;
     }
     
+    var lastNoise = 0;
+    
     var generate = this.generate;
     this.generators =  {
-        noise  : Math.random,
+        noise  : function(phase){
+                    if(phase % TAU < 4){
+                        lastNoise = Math.random() * 2 - 1;
+                    }
+                    return lastNoise;
+                },
+        uninoise : Math.random,
         sine   : Math.sin,
         synth  : function(phase){return sin(phase) + .5*sin(phase/2) + .3*sin(phase/4)},
         saw    : function(phase){return 2*(phase/TAU - ((phase/TAU + 0.5)|0))},

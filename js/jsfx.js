@@ -550,7 +550,35 @@ var jsfx = {};
             if( r() < 0.5 )
                 p.HPFilterCutoff = r(0.3);
         } else if (id === "Explosion") {
+            p.Generator = "noise";
+            if(r() < 0.5){
+                p.StartFrequency = r(440, 110);
+                p.Slide = r(0.4, -0.1);
+            } else {
+                p.StartFrequency = r(1200, 220);
+                p.Slide = r(-0.2, -0.2);
+            }
             
+            p.StartFrequency = Math.sqrt(p.StartFrequency);
+            
+            if( r() < 0.2 )
+                p.Slide = 0;
+            if( r() < 0.33 )
+                p.RepeatSpeed = r(0.5, 0.3);
+            
+            p.SustainTime = r(0.3, 0.1);
+            p.DecayTime = r(0.5);
+            p.SustainPunch = r(0.6, 0.2);
+            
+            if(r() < 0.5){
+                p.PhaserOffset = r(0.9, -0.3);
+                p.PhaserSweep = r(-0.3);
+            }
+            
+            if(r() < 0.33){
+                p.ChangeSpeed = r(0.3, 0.6);
+                p.ChangeAmount = r(-1.6, 0.8);
+            }
         }
         this.setParams(p);
         this.play();
