@@ -50,11 +50,11 @@ var jsfx = {};
         ap("Phaser Sweep", -1, 1, 0);
         
         grp++;
-        ap("LP Filter Cutoff", 0, 100, 50);
-        ap("LP Filter Cutoff Sweep", 0, 100, 50);
+        ap("LP Filter Cutoff", 0, 1, 0);
+        ap("LP Filter Cutoff Sweep", -1, 1, 0);
         ap("LP Filter Resonance",    0, 100, 50);
-        ap("HP Filter Cutoff",       0, 100, 50);
-        ap("HP Filter Cutoff Sweep", 0, 100, 50);
+        ap("HP Filter Cutoff",       0, 1, 1);
+        ap("HP Filter Cutoff Sweep", -1, 1, -0.5);
         
         grp++;
         ap("Super Sampling Quality", 0, 16, 0, 1);
@@ -109,7 +109,7 @@ var jsfx = {};
         
         // square generator
         generator_A = params.SquareDuty;
-        square_sweep = params.SquareDutySweep / SampleRate;
+        square_slide = params.SquareDutySweep / SampleRate;
         
         // phase calculation
         var phase = 0;
@@ -158,9 +158,18 @@ var jsfx = {};
                              (Math.abs(phaser_offset) > 0.00001);
         
         // lowpass filter
+        var filters_enabled = (params.HPFilterCutoff < 0.99) || (params.LPFilterCutoff > 0.01);
+        var lowpass_pos = 0;
+        var lowpass_pos_slide = 0;
+        var lowpass_cutoff = Math.pow(params.LPFilterCutoff, 3.0) / 10;
+        var lowpass_cutoff_slide = 1.0;
+        var lowpass_damping = 0.2;
+        var lowpass_enabled = params.LPFilterCutoff < 0.99;
         
         // highpass filter
-        
+        var highpass_pos = 0;
+        var highpass_cutoff = Math.pow(params.HPFilterCutoff, 2.0) * 0.1;
+        var highpass_cutoff_slide = 1.0 + params.HPFilterCutoffSweep * 4 / SampleRate;
         
         // repeat
         var repeat_time  = 0;
@@ -195,7 +204,7 @@ var jsfx = {};
             repeat_time += 1;
             
             // square generator
-            generator_A += square_sweep;
+            generator_A += square_slide;
             if(generator_A < 0.0){
                 generator_A = 0.0;
             } else if (generator_A > 0.5){
@@ -259,6 +268,31 @@ var jsfx = {};
                 sample += phaser_buffer[_p];
                 phaser_pos = (phaser_pos + 1) & phaser_mask;
             }
+            
+            /*
+            // filters
+            if( filters_enabled ){
+                
+                var _lowpass_pos_old = lowpass_pos;
+                lowpass_cutoff *= lowpass_cutoff_slide;
+                if(lowpass_cutoff < 0.0){
+                    lowpass_cutoff = 0.0;
+                } else if ( lowpass_cutoff > 0.1 ){
+                    lowpass_cutoff = 0.1;
+                }
+                if(lowpass_enabled){
+                    lowpass_pos_slide += (sample - lowpass_pos) * lowpass_cutoff;
+                    lowpass_pos_slide *= lowpass_damping;
+                } else {
+                    lowpass_pos = sample;
+                    lowpass_pos_slide = 0;
+                }
+                lowpass_pos += lowpass_pos_slide;
+                
+                highpass_pos += lowpass_pos - _lowpass_pos_old;
+                highpass_pos *= 1.0 - highpass_cutoff;
+                sample = highpass_pos;
+            }*/
             
             // envelope processing
             if( i > envelope_last ){
