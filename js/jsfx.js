@@ -1,3 +1,19 @@
+function FunctionInline(main_func, funcs){
+    function remove_function_wrapper(st){
+        st = st.replace(/^\s*function\s*\(\s*\)\s*\{\n*/, "");
+        st = st.replace(/\s*\}\s*$/, "");
+        return st;
+    }
+    
+    var main = main_func.toString();
+    for( funcname in funcs ) {
+        main = main.replace(funcname + '();',
+                            remove_function_wrapper(funcs[funcname]));
+    }
+    
+    return new Function(main);
+}
+
 var jsfx = {};
 (function () {
     var Parameters = [];
@@ -61,17 +77,16 @@ var jsfx = {};
     };
     
     this.generate = function(params){
-        // useful consts
+        // useful consts/functions
         var TAU = 2 * Math.PI;
+        var sin = Math.sin;
+        var cos = Math.cos;
         var SampleRate = audio.SampleRate;
         
         // super sampling
         var super_sampling_quality = params.SuperSamplingQuality | 0;
         if(super_sampling_quality < 1) super_sampling_quality = 1;
         SampleRate = SampleRate * super_sampling_quality;
-        
-        // useful functions
-        var sin = Math.sin;
         
         // enveloping initialization
         var _ss = 1.0 + params.SustainPunch;
@@ -96,6 +111,7 @@ var jsfx = {};
         for(var i = 0; i < envelopes_len; i++){
             totalSamples += envelopes[i].samples;
         }
+        
         // fix totalSample limit
         if( totalSamples < SampleRate / 2){
             totalSamples = SampleRate / 2;
