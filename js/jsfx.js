@@ -1,19 +1,3 @@
-function FunctionInline(main_func, funcs){
-    function remove_function_wrapper(st){
-        st = st.replace(/^\s*function\s*\(\s*\)\s*\{\n*/, "");
-        st = st.replace(/\s*\}\s*$/, "");
-        return st;
-    }
-    
-    var main = main_func.toString();
-    for( funcname in funcs ) {
-        main = main.replace(funcname + '();',
-                            remove_function_wrapper(funcs[funcname]));
-    }
-    
-    return new Function(main);
-}
-
 var jsfx = {};
 (function () {
     var Parameters = [];
@@ -97,7 +81,7 @@ var jsfx = {};
         
         // envelope sample calculation
         for(var i = 0; i < envelopes_len; i++){
-            envelopes[i].samples = 1 + ((envelopes[i].time * SampleRate) | 0)
+            envelopes[i].samples = 1 + ((envelopes[i].time * SampleRate) | 0);
         }
         // envelope loop variables
         var envelope = undefined;
@@ -117,9 +101,12 @@ var jsfx = {};
             totalSamples = SampleRate / 2;
         }
         
+        var outSamples = (totalSamples / super_sampling_quality)|0;
+        
         // out data samples
-        var out = new Array(totalSamples);
+        var out = new Array(outSamples);
         var sample = 0;
+        var sample_accumulator = 0;
         
         // main generator        
         var generator = params.generator;
@@ -209,9 +196,18 @@ var jsfx = {};
         // master volume controller
         var master_volume = params.MasterVolume;
         
+        var k = 0;
         for(var i = 0; i < totalSamples; i++){
             // main generator
             sample = generator(phase, generator_A, generator_B);
+            
+            // square generator
+            generator_A += square_slide;
+            if(generator_A < 0.0){
+                generator_A = 0.0;
+            } else if (generator_A > 0.5){
+                generator_A = 0.5;
+            }
             
             if( repeat_time > repeat_limit ){
                 // phase reset
@@ -230,14 +226,6 @@ var jsfx = {};
                 repeat_time = 0;
             }
             repeat_time += 1;
-            
-            // square generator
-            generator_A += square_slide;
-            if(generator_A < 0.0){
-                generator_A = 0.0;
-            } else if (generator_A > 0.5){
-                generator_A = 0.5;
-            }
             
             // phase calculation
             phase += phase_speed;
@@ -348,21 +336,16 @@ var jsfx = {};
             sample *= master_volume;
             
             // prepare for next sample
-            out[i] = sample;
-        }
-        
-        // super sampling
-        if(super_sampling_quality > 1){
-            var smooth_totalSamples = (totalSamples/super_sampling_quality)|0;
-            var smooth_out = new Array(smooth_totalSamples);
-            for(var i = 0 ; i < smooth_totalSamples; i++){
-                smooth_out[i] = 0;
-                var b = i * super_sampling_quality;
-                for(var z = 0; z < super_sampling_quality; z++)
-                    smooth_out[i] += out[b + z];
-                smooth_out[i] /= super_sampling_quality;
+            if(super_sampling_quality > 1){
+                sample_accumulator += sample;
+                if( (i + 1) % super_sampling_quality === 0){
+                    out[k] = sample_accumulator / super_sampling_quality;
+                    k += 1;
+                    sample_accumulator = 0;
+                }
+            } else {
+                out[i] = sample;
             }
-            out = smooth_out;
         }
         
         return out;
