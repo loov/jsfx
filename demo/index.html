@@ -80,7 +80,7 @@
     }
     
     #libload {
-      width: 390px;
+      width: 370px;
       margin-bottom : 10px;
     }
   </style>
@@ -104,9 +104,12 @@
           <button onclick="jsfxgui.paramsToLibrary()">To Library</button>
         </div>
       </div>
-      
-      <input type="text" id="libload" value='["noise",0.0000,0.4000,0.0000,0.0060,0.0000,0.1220,20.0000,460.0000,2400.0000,-0.5240,0.0000,0.0000,0.0100,0.0003,0.0000,0.0000,0.0000,0.0000,0.0000,0.0000,0.0000,0.0000,0.9990,0.0000,0.0000,0.0000,0.0000]'></input><button onclick="jsfxgui.paramsFromField()">Load</button><br />
-      
+      <div>
+      <input type="text" id="libload" value='["noise",0.0000,0.4000,0.0000,0.0060,0.0000,0.1220,20.0000,460.0000,2400.0000,-0.5240,0.0000,0.0000,0.0100,0.0003,0.0000,0.0000,0.0000,0.0000,0.0000,0.0000,0.0000,0.0000,0.9990,0.0000,0.0000,0.0000,0.0000]'></input><button onclick="jsfxgui.paramsFromField()">Load</button>
+      &nbsp;
+      <a href="#" id="link">link</a>
+      <br />
+      </div>
       <div id="config-panel">
       </div>
     </div>
@@ -137,6 +140,32 @@
     jsfxgui.initLogging("log");
     jsfxgui.initLibrary("library");
     jsfxgui.initField("libload");
+    jsfxgui.onplay = onplay;
+    
+    (function(){ // Import GET Vars
+      document.$_GET = [];
+      var urlHalves = String(document.location).split('?');
+      if(urlHalves[1]){
+         var urlVars = urlHalves[1].split('&');
+         for(var i=0; i<=(urlVars.length); i++){
+            if(urlVars[i]){
+               var urlVarPair = urlVars[i].split('=');
+               document.$_GET[urlVarPair[0]] = urlVarPair[1];
+            }
+         }
+      }
+    })();
+    
+    var link = document.getElementById("link");
+    var field  = document.getElementById("libload");
+    function onplay(){
+      this.paramsToField();
+      link.href = "http://egonelbre.com/js/jsfx/index.html?load=" + field.value;
+    }
+    
+    var val = document.$_GET['load'];
+    if(val !== undefined)
+      document.getElementById('libload').value = val.replace(/%22/g,'"');
   </script>
 </body>
 </html>
