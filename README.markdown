@@ -1,12 +1,12 @@
 #  jsfx
 
+[DEMO SITE](http://www.egonelbre.com/js/jsfx).
+
 This is a javascript library (with frontend) for sound effect generation.
 This needs WAV support from browser to work.
 
 For short clips it can generate the audio in 30ms in a good browser. Might
 be fast enough to do runtime generation of effects.
-
-To see the demo site go to [here](http://www.egonelbre.com/js/jsfx).
 
 ## How to use it?
 
