@@ -3,9 +3,9 @@
 <html lang="en" class="no-js">
 <head>
   <meta charset="utf-8">
-  <meta http-equiv="X-UA-Compatible" content="IE=edge,chrome=1">
+  <meta http-equiv="X-UA-Compatible" content="IE=edge,chrome=1">  
   
-  <title></title>
+  <title>jsfx</title>
   <meta name="description" content="">
   <meta name="author" content="">
   
@@ -68,7 +68,7 @@
       width: 150px;
       text-align: right;
     }
-    #log {
+    #log, #library {
       padding : 5px;
       height: 100px;
       width : 450px;
@@ -85,8 +85,8 @@
   <div id="container">
     <header>
       <h1>jsfx</h1>
+      <p>See <a href="http://www.github.com/egonelbre/jsfx">github</a> for more information.</p>
     </header>
-    
     <div id="main">
       <div id="button-panel">        
         <div id="sample-generators" class="button-set">
@@ -96,12 +96,18 @@
           <button onclick="jsfxgui.reset()">Reset</button>
           <button onclick="jsfxgui.randomize()">Randomize</button>
           <button onclick="jsfxgui.play()">Play</button>
+          <button onclick="jsfxgui.paramsToLibrary()">To Library</button>
         </div>
       </div>
       <div id="config-panel">
       </div>
     </div>
     
+    <h3>Library</h3>
+    <div id="library">
+    </div>
+    
+    <h3>Log</h3>
     <div id="log">
       jsfx... loading...
     </div>
@@ -115,16 +121,24 @@
 
   <script src="../lib/audio.js"></script>
   <script src="../lib/jsfx.js"></script>
+  <script src="../lib/jsfxlib.js"></script>
   <script src="../lib/jsfxgui.js"></script>
   <script>
     jsfxgui.createSampleGenerators("sample-generators");
     jsfxgui.createConfigurationPanel("config-panel");
     jsfxgui.initLogging("log");
+    jsfxgui.initLibrary("library");
+    
+    /*
+    example how to use the library params:
+    
+    audioLibParams = {
+      test : ["saw",0.0000,0.4000,0.5810,0.2640,2.1270,1.1900,875.0000,1163.0000,1205.0000,-0.6380,-0.1400,0.4500,39.4098,-0.2974,-0.3820,-0.7060,0.6830,0.3275,-0.2620,0.2680,-0.0880,0.2260,0.5490,-0.7460,0.8450,0.7930,0.1700]
+    };
+    
+    audioLib = jsfxlib.createWaves(audioLibParams);
+    audioLib.test.play();
+    */
   </script>
-  
-  <!-- scripts concatenated and minified via ant build script-->
-  <script src="js/plugins.js"></script>
-  <script src="js/script.js"></script>
-  <!-- end concatenated and minified scripts-->
 </body>
 </html>
