@@ -6,6 +6,8 @@ This needs WAV support from browser to work.
 For short clips it can generate the audio in 30ms in a good browser. Might
 be fast enough to do runtime generation of effects.
 
+To see the demo site go to [here](http://www.egonelbre.com/js/jsfx).
+
 ## How to use it?
 
 Open up the demo/index.html page. This is the generators front-end
@@ -36,7 +38,7 @@ The basic setup for using the arrays is this:
       samples.explosion.play();
     </script>
 
-## Thanks goes to:
+## The generation is based on:
 
 * [sfxr](http://www.drpetter.se/project_sfxr.html)
 
