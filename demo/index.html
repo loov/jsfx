@@ -35,16 +35,6 @@
       clear : both;
     }
     
-    #config-panel {
-      -moz-column-width: 250px;
-      -moz-column-gap: 20px;
-      -moz-column-rule: 1px dotted black;      
-      -webkit-column-width: 250px;
-      -webkit-column-gap: 20px;
-      -webkit-column-rule: 1px dotted black;
-      height : 330px;
-    }
-    
     #config-panel #generators {
       margin-bottom : 5px;
     }
@@ -53,22 +43,23 @@
       background-color: #ffe;
       border: 1px dotted #333;
       border-collapse : collapse;
-      table-layout : auto;
-      width : 100%;
+      width : 450px;
     }
     
-    #config-panel table:nth-child(4), #config-panel table:nth-child(8) {
-      -moz-column-break-after: always;
-      -webkit-column-break-after: always;
-    }
-    
-    #config-panel table input {
+    #config-panel table input[type="range"] {
       height : 18px;
+      width  : 100%;
     }
     
     #config-panel table td, #config-panel table tr {
-      padding : 1px;
+      text-align: right;
+      padding : 0px 5px 0px;
       margin : 1px;
+    }
+    
+    #config-panel table tr td:first-child {
+      width: 150px;
+      text-align: right;
     }
   </style>
   <script src="../lib/audio.js"></script>
@@ -85,30 +76,23 @@
     <div id="main">
       <div id="button-panel">        
         <div class="button-set">
-          <button onclick="jsfx.randomSample('Pickup/Coin')">Pickup / Coin</button>
-          <button onclick="jsfx.randomSample('Laser/Shoot')">Laser / Shoot</button>
-          <button onclick="jsfx.randomSample('Explosion')">Explosion</button>
-          <button onclick="jsfx.randomSample('Powerup')">Powerup</button>
-          <button onclick="jsfx.randomSample('Hit/Hurt')">Hit / Hurt</button>
-          <button onclick="jsfx.randomSample('Jump')">Jump</button>
-          <button onclick="jsfx.randomSample('Blip/Select')">Blip / Select</button>
+          <button onclick="jsfxgui.randomSample('Pickup/Coin')">Pickup / Coin</button>
+          <button onclick="jsfxgui.randomSample('Laser/Shoot')">Laser / Shoot</button>
+          <button onclick="jsfxgui.randomSample('Explosion')">Explosion</button>
+          <button onclick="jsfxgui.randomSample('Powerup')">Powerup</button>
+          <button onclick="jsfxgui.randomSample('Hit/Hurt')">Hit / Hurt</button>
+          <button onclick="jsfxgui.randomSample('Jump')">Jump</button>
+          <button onclick="jsfxgui.randomSample('Blip/Select')">Blip / Select</button>
         </div>
         <br />
         <div class="button-set">
-          <button onclick="jsfx.reset()">Reset</button>
-          <button onclick="jsfx.randomize()">Randomize</button>
-          <button onclick="jsfx.play()">Play</button>
+          <button onclick="jsfxgui.reset()">Reset</button>
+          <button onclick="jsfxgui.randomize()">Randomize</button>
+          <button onclick="jsfxgui.play()">Play</button>
         </div>
         <div class="clear"></div>
       </div>
       <div id="config-panel">
-        <form id="generators">
-          <input type="radio" checked name="generator" value="sine" />sine
-          <input type="radio" name="generator" value="square" />square
-          <input type="radio" name="generator" value="saw" />saw
-          <input type="radio" name="generator" value="noise" />noise
-          <input type="radio" name="generator" value="synth" />synth<br />        
-        </form>
       </div>
     </div>
     
@@ -119,7 +103,8 @@
   </div> <!-- end of #container -->
 
   <script src="../lib/jsfx.js"></script>
-  <script>jsfx.createConfigurationPanel("config-panel");</script>
+  <script src="../lib/jsfxgui.js"></script>
+  <script>jsfxgui.createConfigurationPanel("config-panel");</script>
   <!-- scripts concatenated and minified via ant build script-->
   <script src="js/plugins.js"></script>
   <script src="js/script.js"></script>
