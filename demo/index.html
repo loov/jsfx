@@ -105,7 +105,7 @@
         </div>
       </div>
       <div>
-      <input type="text" id="libload" value='["noise",0.0000,0.4000,0.0000,0.0060,0.0000,0.1220,20.0000,460.0000,2400.0000,-0.5240,0.0000,0.0000,0.0100,0.0003,0.0000,0.0000,0.0000,0.0000,0.0000,0.0000,0.0000,0.0000,0.9990,0.0000,0.0000,0.0000,0.0000]'></input><button onclick="jsfxgui.paramsFromField()">Load</button>
+      <input type="text" id="libload" value='["noise",0.0000,0.4000,0.0000,0.0060,0.0000,0.1220,20.0000,460.0000,2400.0000,-0.5240,0.0000,0.0000,0.0100,0.0003,0.0000,0.0000,0.0000,0.0000,0.0000,0.0000,0.0000,0.0000,0.9990,0.0000,0.0000,0.0000,0.0000]'></input><button onclick="jsfxgui.paramsFromFieldAndPlay()">Load</button>
       &nbsp;
       <a href="#" id="link">link</a>
       <br />
@@ -164,8 +164,10 @@
     }
     
     var val = document.$_GET['load'];
-    if(val !== undefined)
+    if(val !== undefined){
       document.getElementById('libload').value = val.replace(/%22/g,'"');
+      jsfxgui.paramsFromField();
+    }
   </script>
 </body>
 </html>
