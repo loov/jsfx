@@ -6,9 +6,7 @@ This needs WAV support from browser to work.
 For short clips it can generate the audio in 30ms in a good browser. Might
 be fast enough to do runtime generation of effects.
 
-To see the demo site go to [here](http://www.egonelbre.com/js/jsfx).
-
-## How to use it?
+## How to use it in a game?
 
 Open up the demo/index.html page. This is the generators front-end
 it is advised to use some browser that has slider support (for example Chrome).
