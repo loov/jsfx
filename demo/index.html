@@ -78,6 +78,11 @@
       font-family:monospace;
       border: 1px #000 dashed; 
     }
+    
+    #libload {
+      width: 390px;
+      margin-bottom : 10px;
+    }
   </style>
 </head>
 
@@ -99,6 +104,9 @@
           <button onclick="jsfxgui.paramsToLibrary()">To Library</button>
         </div>
       </div>
+      
+      <input type="text" id="libload" value='["noise",0.0000,0.4000,0.0000,0.0060,0.0000,0.1220,20.0000,460.0000,2400.0000,-0.5240,0.0000,0.0000,0.0100,0.0003,0.0000,0.0000,0.0000,0.0000,0.0000,0.0000,0.0000,0.0000,0.9990,0.0000,0.0000,0.0000,0.0000]'></input><button onclick="jsfxgui.paramsFromField()">Load</button><br />
+      
       <div id="config-panel">
       </div>
     </div>
@@ -128,17 +136,7 @@
     jsfxgui.createConfigurationPanel("config-panel");
     jsfxgui.initLogging("log");
     jsfxgui.initLibrary("library");
-    
-    /*
-    example how to use the library params:
-    
-    audioLibParams = {
-      test : ["saw",0.0000,0.4000,0.5810,0.2640,2.1270,1.1900,875.0000,1163.0000,1205.0000,-0.6380,-0.1400,0.4500,39.4098,-0.2974,-0.3820,-0.7060,0.6830,0.3275,-0.2620,0.2680,-0.0880,0.2260,0.5490,-0.7460,0.8450,0.7930,0.1700]
-    };
-    
-    audioLib = jsfxlib.createWaves(audioLibParams);
-    audioLib.test.play();
-    */
+    jsfxgui.initField("libload");
   </script>
 </body>
 </html>
