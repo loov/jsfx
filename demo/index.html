@@ -17,15 +17,18 @@
   <style>
     #container {
       margin: 40px;
-      width: 850px;
+      width: 450px;
     }
+    
     #button-panel {
       margin-bottom: 10px;
       padding: 3px;
       border: 1px dashed #666;
     }
+    
     .button-set {
-      float: left;
+      margin:0;
+      padding:0;
       padding-left: 20px;
       margin-left: 20px;
       border-left: 1px dotted #666;
@@ -67,7 +70,6 @@
 </head>
 
 <body>
-
   <div id="container">
     <header>
       <h1>jsfx</h1>
@@ -75,16 +77,9 @@
     
     <div id="main">
       <div id="button-panel">        
-        <div class="button-set">
-          <button onclick="jsfxgui.randomSample('Pickup/Coin')">Pickup / Coin</button>
-          <button onclick="jsfxgui.randomSample('Laser/Shoot')">Laser / Shoot</button>
-          <button onclick="jsfxgui.randomSample('Explosion')">Explosion</button>
-          <button onclick="jsfxgui.randomSample('Powerup')">Powerup</button>
-          <button onclick="jsfxgui.randomSample('Hit/Hurt')">Hit / Hurt</button>
-          <button onclick="jsfxgui.randomSample('Jump')">Jump</button>
-          <button onclick="jsfxgui.randomSample('Blip/Select')">Blip / Select</button>
+        <div id="sample-generators" class="button-set">
         </div>
-        <br />
+        <hr /> 
         <div class="button-set">
           <button onclick="jsfxgui.reset()">Reset</button>
           <button onclick="jsfxgui.randomize()">Randomize</button>
@@ -104,7 +99,11 @@
 
   <script src="../lib/jsfx.js"></script>
   <script src="../lib/jsfxgui.js"></script>
-  <script>jsfxgui.createConfigurationPanel("config-panel");</script>
+  <script>
+    jsfxgui.createSampleGenerators("sample-generators");
+    jsfxgui.createConfigurationPanel("config-panel");
+  </script>
+  
   <!-- scripts concatenated and minified via ant build script-->
   <script src="js/plugins.js"></script>
   <script src="js/script.js"></script>
