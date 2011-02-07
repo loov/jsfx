@@ -1,5 +1,7 @@
 #  jsfx
 
+[DEMO SITE](http://www.egonelbre.com/js/jsfx).
+
 This is a javascript library (with frontend) for sound effect generation.
 This needs WAV support from browser to work.
 
