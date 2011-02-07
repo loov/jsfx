@@ -12,7 +12,7 @@ window.log = function(){
     var d = new Date();
     var dif = d.getTime() - __last_log;
     __last_log = d.getTime();
-    console.debug(dif, Array.prototype.slice.call(arguments));
+    //console.debug(dif, Array.prototype.slice.call(arguments));
   }
 };
 
