@@ -17,6 +17,10 @@
   <style>
     #container {
       margin: 40px;
+      width: 750px;
+    }
+    
+    #main {
       width: 450px;
     }
     
@@ -64,9 +68,17 @@
       width: 150px;
       text-align: right;
     }
+    #log {
+      padding : 5px;
+      height: 100px;
+      width : 450px;
+      text-wrap: suppress;
+      overflow: scroll;
+      overflow-style:marquee-line;
+      font-family:monospace;
+      border: 1px #000 dashed; 
+    }
   </style>
-  <script src="../lib/audio.js"></script>
-  <script src="js/libs/modernizr-1.6.min.js"></script>
 </head>
 
 <body>
@@ -85,23 +97,29 @@
           <button onclick="jsfxgui.randomize()">Randomize</button>
           <button onclick="jsfxgui.play()">Play</button>
         </div>
-        <div class="clear"></div>
       </div>
       <div id="config-panel">
       </div>
     </div>
     
+    <div id="log">
+      jsfx... loading...
+    </div>
+    
+    <div class="clear">&nbsp;</div>
     <div id="spacer"></div>
     <footer>
       Egon Elbre &copy; 2011
     </footer>
   </div> <!-- end of #container -->
 
+  <script src="../lib/audio.js"></script>
   <script src="../lib/jsfx.js"></script>
   <script src="../lib/jsfxgui.js"></script>
   <script>
     jsfxgui.createSampleGenerators("sample-generators");
     jsfxgui.createConfigurationPanel("config-panel");
+    jsfxgui.initLogging("log");
   </script>
   
   <!-- scripts concatenated and minified via ant build script-->
