@@ -38,6 +38,11 @@ The basic setup for using the arrays is this:
       samples.explosion.play();
     </script>
 
+## Projects using jsfx
+
+* [HTML5 Drum Sequencer] (http://www11.plala.or.jp/sothicblue/html5drum-jsfx/)
+* [DUBloom](https://github.com/dubharmonic/DUBloom)
+
 ## The generation is based on:
 
 * [sfxr](http://www.drpetter.se/project_sfxr.html)
