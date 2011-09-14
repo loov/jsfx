@@ -32,11 +32,16 @@ The basic setup for using the arrays is this:
         test : ["saw",0.0000,0.4000,0.5810,0.2640,2.1270......],
         explosion : ["noise",0.0000,0.4000,0.0000,0.2040......]
       };
-      
+
       samples = jsfxlib.createWaves(audioLibParams);
       samples.test.play();
       samples.explosion.play();
     </script>
+
+To create a single waveform use `jsfxlib.createWave()`:
+
+    var sound = jsfxlib.createWave(["noise",0.0000,0.4000,0.0000,0.2040......]);
+    sound.play();
 
 ## Projects using jsfx
 
