@@ -33,7 +33,7 @@
 		PhaseMod      : 3,
 		Generator     : 4,
 		SampleMod     : 5,
-        Volume        : 6
+		Volume        : 6
 	};
 
 	jsfx.Composite = Composite;
