@@ -1,16 +1,12 @@
-#  jsfx
-
-[DEMO SITE](http://www.egonelbre.com/js/jsfx).
-
-This is a javascript library (with frontend) for sound effect generation.
-This needs WAV support from browser to work.
+This is a JavaScript library for sound effect generation and is supported on
+[most current browsers](http://caniuse.com/#feat=audio).
 
 For short clips it can generate the audio in 30ms in a good browser. Might
 be fast enough to do runtime generation of effects.
 
-## How to use it in a game?
+### How to use it?
 
-Open up the demo/index.html page. This is the generators front-end
+Open demo/index.html page. This is the generators front-end
 it is advised to use some browser that has slider support (for example Chrome).
 This makes it much easier to use. But you can always use random without effort...
 
@@ -43,35 +39,7 @@ To create a single waveform use `jsfxlib.createWave()`:
     var sound = jsfxlib.createWave(["noise",0.0000,0.4000,0.0000,0.2040......]);
     sound.play();
 
-## Projects using jsfx
+### Thanks...
 
-* [HTML5 Drum Sequencer] (http://www11.plala.or.jp/sothicblue/html5drum-jsfx/)
-* [DUBloom](https://github.com/dubharmonic/DUBloom)
-
-## The generation is based on:
-
-* [sfxr](http://www.drpetter.se/project_sfxr.html)
-
-## License:
-
-The MIT License
-
-Copyright (c) 2011 Egon Elbre
-
-Permission is hereby granted, free of charge, to any person obtaining a copy
-of this software and associated documentation files (the "Software"), to deal
-in the Software without restriction, including without limitation the rights
-to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
-copies of the Software, and to permit persons to whom the Software is
-furnished to do so, subject to the following conditions:
-
-The above copyright notice and this permission notice shall be included in
-all copies or substantial portions of the Software.
-
-THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
-IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
-FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
-AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
-LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
-OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
-THE SOFTWARE.
+This project was inspired by [sfxr](http://www.drpetter.se/project_sfxr.html)
+and was used as a reference for some pieces.
