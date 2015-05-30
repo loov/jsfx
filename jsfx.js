@@ -9,9 +9,223 @@
 	const numChannels = 1;
 	const sin = Math.sin;
 
-	jsfx.SampleRate = guessSampleRate_();
-	jsfx.Sec = jsfx.SampleRate;
-	jsfx.MSec = jsfx.SampleRate / 1000;
+	jsfx.SampleRate = 0;
+	jsfx.Sec = 0;
+
+	jsfx.SetSampleRate = function(sampleRate){
+		jsfx.SampleRate = sampleRate;
+		jsfx.Sec = sampleRate;
+	};
+	jsfx.SetSampleRate(getDefaultSampleRate());
+
+
+
+	jsfx.Module = {};
+	var unit = jsfx.unit = {
+		Second: { suffix: "s"  },
+		Hz:     { suffix: "hz" },
+	};
+
+	var stage = jsfx.stage = {
+		PhaseSpeed    : 0,
+		PhaseSpeedMod : 1,
+		Phase         : 2,
+		PhaseMod      : 3,
+		Generator     : 4,
+		SampleMod     : 5,
+        Volume        : 6
+	};
+
+	jsfx.Composite = Composite;
+	function Composite(params, modules){
+		this.finished = false;
+
+		this.state = {
+			SampleRate: params.SampleRate || jsfx.SampleRate
+		};
+		this.params = [];
+
+		// sort modules
+		modules.sort(function(a,b){ return a.stage - b.stage; })
+		this.modules = modules;
+
+		// setup modules
+		for(var i = 0; i < this.modules.length; i += 1){
+			var M = this.modules[i];
+			var P = params[M.name] || {};
+
+			// add missing parameters
+			map_object(M.params, function(def, name){
+				P[name] = P[name] || def.D;
+			});
+
+			this.params.push(P);
+			// setup the state
+			this.modules[i].setup(this.state, this.params[i]);
+		}
+	}
+	Composite.prototype = {
+		// convert this into a module
+		generate: function(block){
+			var $ = this.state;
+			var N = block.length;
+			for(var i = 0; i < this.modules.length; i += 1){
+				var M = this.modules[i],
+					P = this.params[i];
+				var n = M.process($, P, block);
+				N = Math.min(N, n);
+			}
+			if(N < block.length){
+				this.finished = true;
+			}
+			for(var i = N; i < block.length; i++){
+				block[i] = 0;
+			}
+		}
+	};
+
+	// Frequency
+	jsfx.Module.Frequency = {
+		name: "Frequency",
+		params: {
+			Start: { L:20, H:2400, D:440  },
+
+			Min:   { L:20, H:2400, D:0    },
+			Max:   { L:20, H:2400, D:2000 },
+
+			RepeatAfter:  { L: 0, H: 0.8, D: 0},
+			Repeats: { L: 0, H: 0.8, D: 0},
+		},
+		stage: stage.PhaseSpeed,
+		setup: function($, P){
+
+		},
+		process: function($, block){
+
+		}
+	};
+
+	// Vibrato
+	jsfx.Module.Vibrato = {
+		name: "Vibrato",
+		params: {
+			Depth:      {L: 0,     H:1, D:0},
+			DepthSlide: {L: -0.3,  H:1, D:0},
+
+			Frequency:      {L: 0.01, H:48, D:8},
+			FrequencySlide: {L: -1,   H:1,  D:0},
+		},
+		stage: stage.PhaseSpeedMod,
+		setup: function($, P){
+
+		},
+		process: function($, block){
+
+		}
+	};
+
+	// Phase
+	jsfx.Module.Phase = {
+		name: "Phase",
+		params: {},
+		stage: stage.Phase,
+		setup: function($, P){
+
+		},
+		process: function($, block){
+
+		}
+	};
+
+	// Low/High-Filter
+	jsfx.Module.HLFilter = {
+		name: "HLFilter",
+		params: {},
+		stage: stage.SampleMod,
+		setup: function($, P){
+
+		},
+		process: function($, block){
+
+		}
+	};
+
+	// Phaser Effect
+	jsfx.Module.Phaser = {
+		name: "Phaser",
+		params: {
+			Offset: {L:-1, H:1, D:0},
+			Sweep:  {L:-1, H:1, D:0},
+		},
+		stage: stage.SampleMod,
+		setup: function($, P){
+
+		},
+		process: function($, block){
+
+		}
+	};
+
+	// Generator
+	jsfx.Module.Generator = {
+		name: "Generator",
+		params: {},
+		stage: stage.Generator,
+		setup: function($, P){
+
+		},
+		process: function($, block){
+
+		}
+	};
+
+	// Volume dynamic control with Attack-Sustain-Decay
+	//   ATTACK  | 0                     - Volume + SustainPunch
+	//   SUSTAIN | Volume + SustainPunch - Volume
+	//   DECAY   | Volume                - 0
+	jsfx.Module.ASD = {
+		name: "ASD",
+		params: {
+			Volume:       { L: 0, H: 1, D: 0.4},
+			Attack:       { L: 0, H: 1, D: 0.1, u: unit.Second},
+			Sustain:      { L: 0, H: 2, D: 0.3, u: unit.Second},
+			SustainPunch: { L: 0, H: 3, D: 2.0},
+			Decay:        { L: 0, H: 2, D: 1.0, u: unit.Second},
+		},
+		stage: stage.VolumeControl,
+		setup: function($, P){
+			var SR = $.SampleRate;
+			var V = P.Volume;
+			var SP = V + P.SustainPunch;
+			$.envelopes = [
+				// S = start volume, E = end volume, N = duration in samples
+				{S:  0, E: SP, N: (P.Attack  * SR)|0 },
+				{S: SP, E:  V, N: (P.Sustain * SR)|0 },
+				{S:  V, E:  0, N: (P.Decay   * SR)|0 },
+			];
+			// G = volume gradient
+			$.envelopes.map(function(e){ e.G = (e.E - e.S) / e.N; })
+		},
+		process: function($, block){
+			var i = 0;
+			while(($.envelopes.length > 0) && (i < block.length)){
+				var E = $.envelope;
+				var Vol = E.S, Grad = E.G;
+				var N = Math.min(block.length - i, i + E.N);
+				var end = i + N;
+				for(; i < end; i += 1){
+					block[i] *= Vol;
+					Vol += Grad;
+				}
+				E.S = Vol;
+				E.N -= N;
+				if(E.N == 0){
+					$.envelopes.shift();
+				}
+			}
+			return i;
+		}
+	};
 
 	// STATELESS GENERATORS
 	jsfx.G = {
@@ -136,7 +350,7 @@
 	}
 
 	// uses AudioContext sampleRate or 44100;
-	function guessSampleRate_(){
+	function getDefaultSampleRate(){
 		if(typeof AudioContext !== 'undefined'){
 			return (new AudioContext()).sampleRate;
 		}
