@@ -1,3 +1,5 @@
+![](https://raw.githubusercontent.com/egonelbre/jsfx/master/jsfx.png)
+
 This is a JavaScript library for sound effect generation and is supported on
 [most current browsers](http://caniuse.com/#feat=audio).
 
