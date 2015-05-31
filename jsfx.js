@@ -152,6 +152,8 @@
 					P[name] = def.D;
 				}
 			});
+
+			params[M.name] = P;
 		}
 	}
 
@@ -653,6 +655,14 @@
 		return map_object(jsfx.Module, function(){ return {} });
 	}
 
+	function RemoveEmptyParams(params){
+		for(var name in params){
+			if(Object.keys(params[name]).length == 0){
+				delete params[name];
+			}
+		}
+	};
+
 	jsfx.Preset = {
 		Reset: function(){
 			return EmptyParams();
@@ -667,6 +677,7 @@
 				p.Frequency.ChangeSpeed = runif(0.15, 0.1);
 				p.Frequency.ChangeAmount = runif(8, 4);
 			}
+			RemoveEmptyParams(p);
 			return p;
 		},
 		Laser: function(){
@@ -704,6 +715,7 @@
 			if(runif() < 0.5){
 				p.Filter.HP = runif(0.3);
 			}
+			RemoveEmptyParams(p);
 			return p;
 		},
 		Explosion: function(){
@@ -733,6 +745,7 @@
 				p.Frequency.ChangeSpeed = runif(0.3, 0.6);
 				p.Frequency.ChangeAmount = runif(24, -12);
 			}
+			RemoveEmptyParams(p);
 			return p;
 		},
 		Powerup: function(){
@@ -758,6 +771,7 @@
 			p.Volume.Sustain = runif(0.4);
 			p.Volume.Decay = runif(0.4, 0.1);
 
+			RemoveEmptyParams(p);
 			return p;
 		},
 		Hit: function(){
@@ -775,6 +789,8 @@
 			if(runif() < 0.5){
 				p.Filter.HP = runif(0.3);
 			}
+
+			RemoveEmptyParams(p);
 			return p;
 		},
 		Jump: function(){
@@ -794,6 +810,8 @@
 			if(runif() < 0.3){
 				p.Filter.LP = runif(-0.6, 1);
 			}
+
+			RemoveEmptyParams(p);
 			return p;
 		},
 		Select: function(){
@@ -807,6 +825,7 @@
 			p.Volume.Decay   = runif(0.2);
 
 			p.Filter.HP = 0.2;
+			RemoveEmptyParams(p);
 			return p;
 		},
 		Lucky: function(){
@@ -824,6 +843,7 @@
 			});
 			p.Volume.Master = 0.4;
 			p.Filter = {}; // disable filter, as it usually will clip everything
+			RemoveEmptyParams(p);
 			return p;
 		}
 	};

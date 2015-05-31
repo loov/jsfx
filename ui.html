@@ -25,6 +25,7 @@
 
 		<div class="panel wide">
 			<div class="panel-title">Library</div>
+			<input type="text" readonly id="library-content" title="Paramset for the current Library.">
 			<div id="library"></div>
 		</div>
 	</div>
@@ -32,7 +33,7 @@
 <script>
 var Library = {};
 
-var CurrentParams = jsfx.EmptyParams();
+var CurrentParams = {};
 
 function PlayCurrent(){ Play(CurrentParams); }
 function Play(params){
@@ -49,7 +50,15 @@ function AddToLibrary(){
 	if((name == null) || (name == "")){
 		return;
 	}
-	Library[name] = JSON.parse(JSON.stringify(CurrentParams));
+
+	var params = JSON.parse(JSON.stringify(CurrentParams));
+	for(var module in params){
+		if(Object.keys(params[module]).length == 0){
+			delete params[module];
+		}
+	}
+
+	Library[name] = params;
 	UpdateHash();
 	UpdateCurrentView();
 }
@@ -62,14 +71,18 @@ function SelectPreset(preset){
 
 var LastHash = "";
 function UpdateHash(){
-	LastHash = "#" + btoa(JSON.stringify(Library));
+	var json = JSON.stringify(Library);
+	document.getElementById("library-content").value = json;
+	LastHash = "#" + btoa(json);
 	window.location.hash = LastHash;
 }
 
 function LoadFromHash(){
 	var json = window.location.hash.substr(1);
 	try{
-		Library = JSON.parse(atob(json));
+		json = atob(json)
+		document.getElementById("library-content").value = json;
+		Library = JSON.parse(json);
 	}catch(e){ console.log(e); }
 }
 
@@ -129,8 +142,15 @@ function UpdateCurrentView(){
 	});
 }
 
+document.getElementById("library-content").click = function(ev){
+	ev.currentTarget.select();
+}
+
 function ModifyValue(moduleName, paramName, newValue){
 	// console.log("CHANGE", moduleName, paramName, newValue);
+	if(CurrentParams[moduleName] == null){
+		CurrentParams[moduleName] = {};
+	}
 	CurrentParams[moduleName][paramName] = newValue;
 	PlayCurrent();
 }
@@ -338,7 +358,11 @@ UpdateCurrentView();
 		right: 8px;
 	}
 
-
+	#jsfx #library-content {
+		position: absolute;
+		top: 4px;
+		right: 4px;
+	}
 	#jsfx #library .library-item {
 		position: relative;
 		cursor: pointer;
