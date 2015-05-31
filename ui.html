@@ -11,6 +11,7 @@
 		<div id="control" class="panel">
 			<div class="panel-title">Control</div>
 			<button onclick="PlayCurrent()">Play</button>
+			<button onclick="AddToLibrary()">Add</button>
 			<div id="last-time" title="Time it took to generate.">10ms</div>
 			<div class="clear"></div>
 		</div>
@@ -20,20 +21,37 @@
 		<div class="clear"></div>
 		<div id="panels">
 		</div>
+		<div class="clear"></div>
+
+		<div class="panel wide">
+			<div class="panel-title">Library</div>
+			<div id="library"></div>
+		</div>
 	</div>
 </body>
 <script>
-var Live = jsfx.Live({});
+var Library = {};
 
 var CurrentParams = jsfx.EmptyParams();
-function PlayCurrent(){
-	//Live.Play(CurrentParams);
+
+function PlayCurrent(){ Play(CurrentParams); }
+function Play(params){
 	var start = (new Date())|0;
-	jsfx.Sound(CurrentParams).play();
+	jsfx.Sound(params).play();
 	var stop = (new Date())|0;
 	var time = (stop - start) + "ms"
 	console.log("Generated in", time);
 	document.getElementById("last-time").innerText = time;
+}
+
+function AddToLibrary(){
+	var name = prompt("Please enter name for the sound:");
+	if((name == null) || (name == "")){
+		return;
+	}
+	Library[name] = JSON.parse(JSON.stringify(CurrentParams));
+	UpdateHash();
+	UpdateCurrentView();
 }
 
 function SelectPreset(preset){
@@ -41,6 +59,27 @@ function SelectPreset(preset){
 	UpdateCurrentView();
 	PlayCurrent();
 }
+
+var LastHash = "";
+function UpdateHash(){
+	LastHash = "#" + btoa(JSON.stringify(Library));
+	window.location.hash = LastHash;
+}
+
+function LoadFromHash(){
+	var json = window.location.hash.substr(1);
+	try{
+		Library = JSON.parse(atob(json));
+	}catch(e){ console.log(e); }
+}
+
+if(window.location.hash != ""){ LoadFromHash(); }
+window.onhashchange = function(ev){
+	if(window.location.hash != LastHash){
+		LoadFromHash();
+		UpdateCurrentView();
+	}
+};
 
 function UpdateCurrentView(){
 	// create a copy of params
@@ -57,6 +96,36 @@ function UpdateCurrentView(){
 				element.checked = true;
 			}
 		});
+	});
+
+	var library = document.getElementById("library");
+	library.innerHTML = "";
+	var els = list(Library, function(name, params){
+		var load  = E("button", "item-load", "#");
+		load.title = "Load";
+		load.onclick = function(){
+			CurrentParams = JSON.parse(JSON.stringify(params));
+			UpdateCurrentView();
+		};
+
+		var del  = E("button", "item-delete", "X");
+		del.title = "Delete";
+		del.onclick = function(){
+			delete Library[name];
+			UpdateHash();
+			UpdateCurrentView();
+		}
+
+		var el = E("div", "library-item", [
+			load,
+			E("span", "item-name", name),
+			del
+		]);
+		el.title = "play";
+		el.onclick = function(){
+			Play(params);
+		};
+		library.appendChild(el);
 	});
 }
 
@@ -122,6 +191,7 @@ Add(jsfx.Module.Volume);
 Add(jsfx.Module.Vibrato);
 Add(jsfx.Module.Filter);
 Add(jsfx.Module.Phaser);
+
 document.getElementById("panels").appendChild(E("div", "clear", []));
 
 list(jsfx.Preset, function(name, preset){
@@ -199,6 +269,11 @@ UpdateCurrentView();
 		clear: right;
 	}
 
+	#jsfx .panel.wide {
+		float: none; clear: none;
+		width: 100%;
+	}
+
 	@media(max-width: 650px){
 		#jsfx {
 			width: 100%;
@@ -219,15 +294,18 @@ UpdateCurrentView();
 	}
 
 	#jsfx .panel button {
-		margin: 2px;
 		float: left;
+	}
+
+	#jsfx button {
+		margin: 2px;
 		border: 1px solid #AAA;
 		background: #FFF;
 		cursor: pointer;
 		padding: 4px 8px;
 	}
 
-	#jsfx .panel button:hover {
+	#jsfx button:hover {
 		border: 1px solid #7DC6FF;
 		box-shadow: 0 1px 4px 0 rgba(0, 0, 0, 0.37);
 	}
@@ -258,5 +336,34 @@ UpdateCurrentView();
 		position: absolute;
 		bottom: 4px;
 		right: 8px;
+	}
+
+
+	#jsfx #library .library-item {
+		position: relative;
+		cursor: pointer;
+		line-height: 24px;
+	}
+	#jsfx #library .library-item:hover {
+		background: #eee;
+	}
+
+	#jsfx #library .library-item .item-name {
+		margin-left: 8px;
+		vertical-align: middle;
+		font-size: 14px;
+	}
+
+	#jsfx #library .library-item button {
+		padding: 0px 4px;
+		width: 32px;
+		text-align: center;
+	}
+	#jsfx #library .library-item .item-delete {
+		display: block;
+		position: absolute;
+		right: 1px; bottom: 1px; top: 1px;
+
+		border: 1px solid #F88;
 	}
 </style>
