@@ -38,6 +38,7 @@
 		};
 
 		// sort modules
+		modules = modules.slice();
 		modules.sort(function(a,b){ return a.stage - b.stage; })
 		this.modules = modules;
 
@@ -48,7 +49,9 @@
 
 			// add missing parameters
 			map_object(M.params, function(def, name){
-				P[name] = P[name] || def.D;
+				if(typeof P[name] === 'undefined'){
+					P[name] = def.D;
+				}
 			});
 
 			// setup the state
@@ -84,16 +87,16 @@
 		params: {
 			Start: { L:20, H:2400, D:440  },
 
-			Min: { L:20, H:2400, D:0    },
-			Max: { L:20, H:2400, D:2000 },
+			Min: { L:20, H:2400, D:20    },
+			Max: { L:20, H:2400, D:2400  },
 
 			Slide:      { L:-1, H:1, D:0 },
 			DeltaSlide: { L:-1, H:1, D:0 },
 
 			RepeatSpeed:  { L:0, H: 3.0, D: 0 },
 
-			ChangeAmount: { L:-12, H:12, D:0   },
-			ChangeSpeed : { L:  0, H:1,  D:0.1 }
+			ChangeAmount: { L:-12, H:12, D:0 },
+			ChangeSpeed : { L:  0, H:1,  D:0 }
 		},
 		stage: stage.PhaseSpeed,
 		setup: function($, P){
@@ -152,6 +155,7 @@
 				if(arpTime > arpLimit){
 					speed *= arpMod;
 					arpTime = 0;
+					arpLimit = Infinity;
 				}
 				arpTime++;
 
@@ -160,9 +164,11 @@
 
 			$.repeatTime = repeatTime;
 			$.arpeggiatorTime = arpTime;
+			$.arpeggiatorLimit = arpLimit;
 
 			$.phaseSpeed = speed;
 			$.phaseSlide = slide;
+
 			return block.length;
 		}
 	};
@@ -174,7 +180,7 @@
 			Depth:      {L: 0, H:1, D:0},
 			DepthSlide: {L:-1, H:1, D:0},
 
-			Frequency:      {L:  0.01, H:48, D:8},
+			Frequency:      {L:  0.01, H:48, D:0},
 			FrequencySlide: {L: -1.00, H: 1, D:0}
 		},
 		stage: stage.PhaseSpeedMod,
@@ -220,10 +226,10 @@
 		name: 'Generator',
 		params: {
 			// C = choose
-			Func: {C: jsfx.G, D:'sine'},
+			Func: {C: jsfx.G, D:'square'},
 
-			A: {L: 0, H: 1, D: 0.5},
-			B: {L: 0, H: 1, D: 0.5},
+			A: {L: 0, H: 1, D: 0},
+			B: {L: 0, H: 1, D: 0},
 
 			ASlide: {L: -1, H: 1, D: 0},
 			BSlide: {L: -1, H: 1, D: 0}
@@ -237,7 +243,10 @@
 			} else {
 				$.generator = P.Func;
 			}
-			assert(typeof $.generator === 'function', "generator must be a function")
+			if(typeof $.generator === 'object'){
+				$.generator = $.generator.create();
+			}
+			assert(typeof $.generator === 'function', 'generator must be a function')
 
 			$.generatorA = P.A;
 			$.generatorASlide = P.ASlide / $.SampleRate;
@@ -315,9 +324,9 @@
 		}
 	}
 
-	// Low/High-Filter
-	jsfx.Module.HLFilter = {
-		name: 'HLFilter',
+	// Low/High-Pass Filter
+	jsfx.Module.Filter = {
+		name: 'Filter',
 		params: {
 			LP:          {L: 0, H:1, D:1},
 			LPSlide:     {L:-1, H:1, D:0},
@@ -327,7 +336,7 @@
 		},
 		stage: stage.SampleMod + 0,
 		setup: function($, P){
-			$.HLEnabled = (P.HP > EPSILON) || (P.LP < 1 - EPSILON);
+			$.FilterEnabled = (P.HP > EPSILON) || (P.LP < 1 - EPSILON);
 
 			$.LPEnabled = P.LP < 1 - EPSILON;
 			$.LP = pow(P.LP, 3.0) / 10;
@@ -343,7 +352,7 @@
 			$.HPSlide = 1.0 + P.HPSlide * 100 / $.SampleRate;
 		},
 		enabled: function($){
-			return $.HLEnabled;
+			return $.FilterEnabled;
 		},
 		process: function($, block){
 			if(!this.enabled($)){ return block.length; }
@@ -452,28 +461,28 @@
 	};
 
 	// Volume dynamic control with Attack-Sustain-Decay
-	//   ATTACK  | 0                     - Volume + SustainPunch
-	//   SUSTAIN | Volume + SustainPunch - Volume
-	//   DECAY   | Volume                - 0
-	jsfx.Module.ASD = {
-		name: 'ASD',
+	//   ATTACK  | 0              - Volume + Punch
+	//   SUSTAIN | Volume + Punch - Volume
+	//   DECAY   | Volume         - 0
+	jsfx.Module.Volume = {
+		name: 'Volume',
 		params: {
-			Volume:       { L: 0, H: 1, D: 0.5 },
-			Attack:       { L: 0, H: 1, D: 0.1 },
-			Sustain:      { L: 0, H: 2, D: 0.3 },
-			SustainPunch: { L: 0, H: 3, D: 1.0 },
-			Decay:        { L: 0, H: 2, D: 1.0 }
+			Volume:  { L: 0, H: 1, D: 0.5 },
+			Attack:  { L: 0, H: 1, D: 0.01 },
+			Sustain: { L: 0, H: 2, D: 0.3 },
+			Punch:   { L: 0, H: 3, D: 1.0 },
+			Decay:   { L: 0, H: 2, D: 1.0 }
 		},
 		stage: stage.Volume,
 		setup: function($, P){
 			var SR = $.SampleRate;
 			var V = P.Volume;
-			var SP = V * (1 + P.SustainPunch);
+			var VP = V * (1 + P.Punch);
 			$.envelopes = [
 				// S = start volume, E = end volume, N = duration in samples
-				{S:  0, E:   V, N: (P.Attack  * SR)|0 }, // Attack
-				{S: SP, E:   V, N: (P.Sustain * SR)|0 }, // Sustain
-				{S:  V, E:   0, N: (P.Decay   * SR)|0 }  // Decay
+				{S: 0, E: V, N: (P.Attack  * SR)|0 }, // Attack
+				{S:VP, E: V, N: (P.Sustain * SR)|0 }, // Sustain
+				{S: V, E: 0, N: (P.Decay   * SR)|0 }  // Decay
 			];
 			// G = volume gradient
 			$.envelopes.map(function(e){ e.G = (e.E - e.S) / e.N; })
@@ -502,9 +511,180 @@
 		}
 	};
 
-	// STATELESS GENERATORS
+	// PRESETS
 
+	jsfx.DefaultModules = [
+		jsfx.Module.Frequency,
+		jsfx.Module.Vibrato,
+		jsfx.Module.Generator,
+		jsfx.Module.Filter,
+		jsfx.Module.Phaser,
+		jsfx.Module.Volume
+	];
+
+	jsfx.DefaultParams = DefaultParams;
+	function DefaultParams(){
+		return map_object(jsfx.Module, function(){ return {} });
+	}
+
+	jsfx.Preset = {
+		Coin: function(){
+			var p = DefaultParams();
+			p.Frequency.Start = runif(880, 660);
+			p.Volume.Sustain = runif(0.1);
+			p.Volume.Decay = runif(0.4, 0.1);
+			p.Volume.Punch = runif(0.3, 0.3);
+			if(runif() < 0.5){
+				p.Frequency.ChangeSpeed = runif(0.15, 0.1);
+				p.Frequency.ChangeAmount = runif(8, 4);
+			}
+			return p;
+		},
+		Laser: function(){
+			var p = DefaultParams();
+			p.Generator.Func = rchoose(['square', 'saw', 'sine']);
+
+			if(runif() < 0.33){
+				p.Frequency.Start = runif(880, 440);
+				p.Frequency.Min = runif(0.1);
+				p.Frequency.Slide = runif(0.3, -0.8);
+			} else {
+				p.Frequency.Start = runif(1200, 440);
+				p.Frequency.Min = p.Frequency.Start - runif(880, 440);
+				if(p.Frequency.Min < 110){ p.Frequency.Min = 110; }
+				p.Frequency.Slide = runif(0.3, -1);
+			}
+
+			if(runif() < 0.5){
+				p.Generator.A = runif(0.5);
+				p.Generator.ASlide = runif(0.2);
+			} else {
+				p.Generator.A = runif(0.5, 0.4);
+				p.Generator.ASlide = runif(0.7);
+			}
+
+			p.Volume.Sustain = runif(0.2, 0.1);
+			p.Volume.Decay   = runif(0.4);
+			if(runif() < 0.5){
+				p.Volume.Punch = runif(0.3);
+			}
+			if(runif() < 0.33){
+				p.Phaser.Offset = runif(0.2);
+				p.Phaser.Sweep = runif(0.2);
+			}
+			if(runif() < 0.5){
+				p.Filter.HP = runif(0.3);
+			}
+			return p;
+		},
+		Explosion: function(){
+			var p = DefaultParams();
+			p.Generator.Func = 'noise';
+			if(runif() < 0.5){
+				p.Frequency.Start = runif(440, 40);
+				p.Frequency.Slide = runif(0.4, -0.1);
+			} else {
+				p.Frequency.Start = runif(1600, 220);
+				p.Frequency.Slide = runif(-0.2, -0.2);
+			}
+
+			if(runif() < 0.2){ p.Frequency.Slide = 0; }
+			if(runif() < 0.3){ p.RepeatSpeed = runif(0.5, 0.3); }
+
+			p.Volume.Sustain = runif(0.3, 0.1);
+			p.Volume.Decay   = runif(0.5);
+			p.Volume.Punch   = runif(0.6, 0.2);
+
+			if(runif() < 0.5){
+				p.Phaser.Offset = runif(0.9, -0.3);
+				p.Phaser.Sweep  = runif(-0.3);
+			}
+
+			if(runif() < 0.33){
+				p.Frequency.ChangeSpeed = runif(0.3, 0.6);
+				p.Frequency.ChangeAmount = runif(24, -12);
+			}
+			return p;
+		},
+		Powerup: function(){
+			var p = DefaultParams();
+			if(runif() < 0.5){
+				p.Generator.Func = 'saw';
+			} else {
+				p.Generator.A = runif(0.6);
+			}
+
+			p.Frequency.Start = runif(220, 440);
+			if(runif() < 0.5){
+				p.Frequency.Slide = runif(0.5, 0.2);
+				p.Frequency.RepeatSpeed = runif(0.4, 0.4);
+			} else {
+				p.Frequency.Slide = runif(0.2, 0.05);
+				if(runif() < 0.5){
+					p.Vibrato.Depth = runif(0.6, 0.1);
+					p.Vibrato.Frequency = runif(30, 10);
+				}
+			}
+
+			p.Volume.Sustain = runif(0.4);
+			p.Volume.Decay = runif(0.4, 0.1);
+
+			return p;
+		},
+		Hit: function(){
+			var p = DefaultParams();
+			p.Generator.Func = rchoose(['square', 'saw', 'noise']);
+			p.Generator.A = runif(0.6);
+			p.Generator.ASlide = runif(0.5);
+
+			p.Frequency.Start = runif(880, 220);
+			p.Frequency.Slide = -runif(0.4, 0.3);
+
+			p.Volume.Sustain = runif(0.1);
+			p.Volume.Decay = runif(0.2, 0.1);
+
+			if(runif() < 0.5){
+				p.Filter.HP = runif(0.3);
+			}
+			return p;
+		},
+		Jump: function(){
+			var p = DefaultParams();
+			p.Generator.Func = 'square';
+			p.Generator.A = runif(0.6);
+
+			p.Frequency.Start = runif(330, 330);
+			p.Frequency.Slide = runif(0.4, 0.2);
+
+			p.Volume.Sustain = runif(0.3, 0.1);
+			p.Volume.Decay = runif(0.2, 0.1);
+
+			if(runif() < 0.5){
+				p.Filter.HP = runif(0.3);
+			}
+			if(runif() < 0.3){
+				p.Filter.LP = runif(-0.6, 1);
+			}
+			return p;
+		},
+		Select: function(){
+			var p = DefaultParams();
+			p.Generator.Func = rchoose(['square', 'saw']);
+			p.Generator.A = runif(0.6);
+
+			p.Frequency.Start = runif(660, 220);
+
+			p.Volume.Sustain = runif(0.1, 0.1);
+			p.Volume.Decay   = runif(0.2);
+
+			p.Filter.HP = 0.2;
+			return p;
+		}
+	};
+
+	// GENERATORS
 	jsfx.G = {
+		// STATELESS
 		// uniform noise
 		unoise: Math.random,
 		// sine wave
@@ -525,6 +705,20 @@
 		// simple synth
 		synth: function(phase){
 			return sin(phase) + .5*sin(phase/2) + .3*sin(phase/4);
+		},
+
+		// STATEFUL
+		// noise
+		noise: {
+			create: function(){
+				var last = Math.random();
+				return function(phase){
+					if(phase % TAU < 4){
+						last = Math.random() * 2 - 1;
+					}
+					return last;
+				};
+			}
 		}
 	};
 
@@ -658,6 +852,20 @@
 			}
 		}
 		return r;
+	}
+
+	// uniform random
+	function runif(scale, offset){
+		var a = Math.random();
+        if(scale !== undefined)
+            a *= scale;
+        if(offset !== undefined)
+            a += offset;
+        return a;
+	}
+
+	function rchoose(gens){
+		return gens[(gens.length*Math.random())|0];
 	}
 
 })(this.jsfx = {});

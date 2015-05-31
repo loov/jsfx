@@ -14,48 +14,29 @@
 	</style>
 </head>
 <body>
-
-<canvas id="view"></canvas>
+	<div id="buttons"></div>
 <script>
+var buttons = document.getElementById("buttons");
 
-var view = document.getElementById("view");
-view.width = 700; view.height = 400;
-var context = view.getContext("2d");
-context.width = view.clientWidth;
+for(var name in jsfx.Preset) {
+	var b = document.createElement("button");
+	b.innerText = name;
+	b.onclick = (function(preset){
+		return function(){
+			var params = preset();
+			gen = new jsfx.Composite(params, jsfx.DefaultModules);
+			var data = new Float32Array(3*jsfx.Sec);
 
-context.clearRect(0, 0, 700, 400);
-context.fillRect(0, 200, 700, 1);
+			console.time("generate");
+			gen.generate(data);
+			console.timeEnd("generate");
 
-TOTAL = 0;
-context.fillStyle = "hsla(0,70%,40%,1)";
-function plot(i, v){
-	if(i % (1 << 5) != 0) { return }
-	context.fillRect( i*700/TOTAL, 200 - v*150, 1, v*150);
+			jsfx.CreateAudio(data).play();
+		}
+	})(jsfx.Preset[name]);
+
+	buttons.appendChild(b);
 }
-
-var gen = new jsfx.Composite({
-	Frequency: {
-		RepeatAfter: 0.4
-	}
-},[
-	jsfx.Module.Frequency,
-	jsfx.Module.Vibrato,
-	jsfx.Module.Generator,
-	jsfx.Module.HLFilter,
-	jsfx.Module.Phaser,
-	jsfx.Module.ASD
-]);
-
-var block = new Float32Array(3*jsfx.Sec);
-TOTAL = block.length;
-
-console.time("generate");
-gen.generate(block);
-console.timeEnd("generate");
-
-//var data = jsfx.G.synth.generate(440, jsfx.Sec, 0.5);
-var audio = jsfx.CreateAudio(block);
-audio.play();
 </script>
 
 </body>
