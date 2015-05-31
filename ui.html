@@ -29,21 +29,25 @@ context.fillRect(0, 200, 700, 1);
 TOTAL = 0;
 context.fillStyle = "hsla(0,70%,40%,1)";
 function plot(i, v){
-	if(i % (1 << 10) != 0) { return }
-	context.fillRect( i*700/TOTAL, 200 - v*100, 1, 1);
+	if(i % (1 << 5) != 0) { return }
+	context.fillRect( i*700/TOTAL, 200 - v*150, 1, v*150);
 }
 
-var gen = new jsfx.Composite({}, [
+var gen = new jsfx.Composite({
+},[
 	jsfx.M.Frequency,
+	jsfx.M.Vibrato,
 	jsfx.M.Generator,
 	jsfx.M.ASD
 ]);
 
-var block = new Float32Array(10*jsfx.Sec);
+var block = new Float32Array(3*jsfx.Sec);
 TOTAL = block.length;
 
 console.time("generate");
+//console.profile("generate");
 gen.generate(block);
+//console.profileEnd("generate");
 console.timeEnd("generate");
 
 //var data = jsfx.G.synth.generate(440, jsfx.Sec, 0.5);

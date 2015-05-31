@@ -1,10 +1,8 @@
 (function(jsfx){
 	"use strict";
-	"use asm";
 
 	const chr = String.fromCharCode;
-	const TAU = +6.283185307179586;
-	const TAU_LARGE = +TAU * (1 << 8);
+	const TAU = +Math.PI*2;
 	const bitsPerSample = 16|0;
 	const numChannels = 1|0;
 	const sin = Math.sin;
@@ -58,7 +56,7 @@
 	Composite.prototype = {
 		//TODO: see whether this can be converted to a module
 		generate: function(block){
-			for(var i = 0; i < block.length; i += 1){
+			for(var i = 0|0; i < block.length; i += 1){
 				block[i] = 0;
 			}
 
@@ -118,7 +116,7 @@
 			for(var i = 0; i < block.length; i++){
 				slide += deltaSlide;
 				speed *= slide;
-				speed = clamp(speed, min, max); //TODO: stop slide after clamp
+				speed = speed < min ? min : speed > max ? max : speed;
 				block[i] += speed;
 			}
 
@@ -132,8 +130,8 @@
 	jsfx.Module.Vibrato = {
 		name: "Vibrato",
 		params: {
-			Depth:      {L:  0.0, H:1, D:0},
-			DepthSlide: {L: -0.3, H:1, D:0},
+			Depth:      {L: 0, H:1, D:0},
+			DepthSlide: {L:-1, H:1, D:0},
 
 			Frequency:      {L:  0.01, H:48, D:8},
 			FrequencySlide: {L: -1.00, H: 1, D:0},
@@ -155,15 +153,18 @@
 				slide = +$.vibratoPhaseSpeedSlide,
 				depthSlide = +$.vibratoDepthSlide;
 
-			//TODO: optimize if depthSlide == 0 && slide == 0
+			if((depth == 0) && (depthSlide <= 0)){
+				return block.length;
+			}
+
 			for(var i = 0; i < block.length; i++){
 				phase += speed;
-				phase = wrap(phase);
+				if(phase > TAU){phase -= TAU};
 				block[i] += block[i] * sin(phase) * depth;
 
 				speed *= slide;
 				depth += depthSlide;
-				depth = clamp1(depth); //TODO: stop slide after clamp
+				depth = clamp1(depth);
 			}
 
 			$.vibratoPhase = phase;
@@ -192,17 +193,15 @@
 			$.generator = sin;
 		},
 		process: function($, block){
-			var gen   = $.generator,
-				phase = +$.phase,
+			var phase = +$.phase,
 				A = +$.A, ASlide = +$.ASlide,
 				B = +$.B, BSlide = +$.BSlide;
 
-			//TODO: optimize if ASlide == 0 && BSlide == 0;
 			for(var i = 0; i < block.length; i++){
 				phase += block[i];
-				phase = wrap(phase);
+				if(phase > TAU){ phase -= TAU };
 				A += ASlide; B += BSlide;
-				block[i] = gen(phase, A, B);
+				block[i] = $.generator(phase, A, B);
 			}
 
 			$.phase = phase;
@@ -285,7 +284,6 @@
 					block[i] *= vol;
 					vol += grad;
 					vol = clamp(vol, 0, 10);
-					plot(i, vol);
 				}
 				E.S = vol;
 				E.N -= N;
@@ -332,7 +330,7 @@
 		for(var i = 0; i < data.length; i++){
 			data[i] = gen(phase, A, B);
 			phase += phaseStep;
-			phase = wrap(phase);
+			if(phase > TAU){phase -= TAU};
 		}
 		return data;
 	}
@@ -445,14 +443,6 @@
 		return +v;
 	}
 
-	function wrap(v){
-		v = +v;
-		if(v > TAU_LARGE){
-			return v - TAU_LARGE;
-		}
-		return v;
-	}
-
 	function map_object(obj, fn){
 		var r = {};
 		for(var name in obj){
@@ -462,4 +452,5 @@
 		}
 		return r;
 	}
+
 })(this.jsfx = {});
