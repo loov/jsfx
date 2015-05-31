@@ -20,6 +20,9 @@
 	jsfx.SetSampleRate(getDefaultSampleRate());
 
 	// MAIN API
+
+	// Creates a new Audio object based on the params
+	// params can be a params generating function or the actual parameters
 	jsfx.Sound = function(params){
 		var gen = new Processor(params, jsfx.DefaultModules);
 		var SampleCount = 0;
@@ -32,9 +35,91 @@
 
 		var block = new Float32Array(SampleCount);
 		gen.generate(block);
-
 		return CreateAudio(block);
 	};
+
+	// Sounds takes a named set of params, and generates multiple
+	// sound objects at once.
+	jsfx.Sounds = function(paramset){
+		var sounds = {};
+		for(var name in paramset){
+			sounds[name] = jsfx.Sound(paramset[name]);
+		}
+		return sounds;
+	};
+
+	// Same as Sounds, but avoids locking the browser for too long
+	// in case you have a large amount of sounds to generate
+	jsfx.SoundsAsync = function(paramset, ondone, onprogress){
+		var names = [];
+
+		// create stubs for audio objects
+		var sounds = {};
+		for(var name in paramset){
+			sounds[name] = new Audio();
+			names.push(name);
+		}
+
+		var loaded = 0, total = names.length;
+		function next(){
+			if(names.length == 0){
+				ondone && ondone(sounds);
+				return;
+			}
+			var name = names.shift();
+			sounds[name] = jsfx.Sound(paramset[name]);
+			loaded++;
+			onprogress && onprogress(name, loaded, total);
+
+			window.setTimeout(30, next);
+		}
+
+		window.setTimeout(30, next);
+		return sounds;
+	}
+
+	if(AudioContext){
+		// Node creates a new AudioContext ScriptProcessor that outputs the
+		// sound. It will automatically disconnect, unless otherwise specified.
+		jsfx.Node = function(audioContext, params, bufferSize, stayConnected){
+			var node = audioContext.createScriptProcessor(bufferSize, 0, 1);
+			var gen = new Processor(params, jsfx.DefaultModules);
+			node.onaudioprocess = function(ev){
+				var block = ev.outputBuffer.getChannelData(0);
+				gen.generate(block);
+				if(!stayConnected && gen.finished){
+					node.disconnect();
+				}
+			}
+			return node;
+		}
+
+		// Live creates an managed AudioContext for playing.
+		// This is useful, when you want to use procedurally generated sounds.
+		jsfx.Live = function(paramset){
+			var context = new AudioContext();
+			var volume = context.createGain();
+			volume.connect(context.destination);
+
+			var play = map_object(paramset, function(params){
+				return function(){
+					var node = jsfx.Node(context, params, 2048);
+					node.connect(volume);
+				};
+			});
+
+			return {
+				close: function(){
+					context.close();
+				},
+				context: context,
+				play: play,
+
+				get volume(){ return volume.gain.value; },
+				set volume(v){ volume.gain.value = v; }
+			};
+		}
+	}
 
 	// SOUND GENERATION
 	jsfx.Module = {};
@@ -63,8 +148,13 @@
 		}
 	}
 
+	// Generates a stateful sound effect processor
+	// params can be a function that creates a parameter set
 	jsfx.Processor = Processor;
 	function Processor(params, modules){
+		if(typeof params === 'function'){
+			params = params();
+		}
 		this.finished = false;
 
 		this.state = {
@@ -91,6 +181,7 @@
 			for(var i = 0|0; i < block.length; i += 1){
 				block[i] = 0;
 			}
+			if(this.finished){ return; }
 
 			var $ = this.state,
 				N = block.length|0;

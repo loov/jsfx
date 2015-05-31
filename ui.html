@@ -16,6 +16,7 @@
 <body>
 	<div id="buttons"></div>
 <script>
+var AC = new AudioContext();
 var buttons = document.getElementById("buttons");
 
 for(var name in jsfx.Preset) {
@@ -23,7 +24,7 @@ for(var name in jsfx.Preset) {
 	b.innerText = name;
 	b.onclick = (function(preset){
 		return function(){
-			jsfx.Sound(preset()).play();
+			jsfx.Sound(preset).play();
 		}
 	})(jsfx.Preset[name]);
 
