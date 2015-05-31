@@ -1,5 +1,5 @@
 (function(jsfx){
-	"use strict";
+	'use strict';
 
 	var chr = String.fromCharCode;
 	var TAU = +Math.PI*2;
@@ -80,7 +80,7 @@
 
 	// Frequency
 	jsfx.Module.Frequency = {
-		name: "Frequency",
+		name: 'Frequency',
 		params: {
 			Start: { L:20, H:2400, D:440  },
 
@@ -130,7 +130,7 @@
 
 	// Vibrato
 	jsfx.Module.Vibrato = {
-		name: "Vibrato",
+		name: 'Vibrato',
 		params: {
 			Depth:      {L: 0, H:1, D:0},
 			DepthSlide: {L:-1, H:1, D:0},
@@ -178,10 +178,10 @@
 
 	// Generator
 	jsfx.Module.Generator = {
-		name: "Generator",
+		name: 'Generator',
 		params: {
 			// C = choose
-			Func: {C: jsfx.G},
+			Func: {C: jsfx.G, D:'sine'},
 
 			A: {L: 0, H: 1, D: 0.5},
 			B: {L: 0, H: 1, D: 0.5},
@@ -192,12 +192,18 @@
 		stage: stage.Generator,
 		setup: function($, P){
 			$.phase = 0;
-			$.generator = sin;
+
+			if(typeof P.Func === 'string'){
+				$.generator = jsfx.G[P.Func];
+			} else {
+				$.generator = P.Func;
+			}
+			assert(typeof $.generator === 'function', "generator must be a function")
 
 			$.A = P.A;
-			$.ASlide = P.ASlide;
+			$.ASlide = P.ASlide / $.SampleRate;
 			$.B = P.B;
-			$.BSlide = P.BSlide;
+			$.BSlide = P.BSlide / $.SampleRate;
 		},
 		process: function($, block){
 			var phase = +$.phase,
@@ -220,7 +226,7 @@
 
 	// Low/High-Filter
 	jsfx.Module.HLFilter = {
-		name: "HLFilter",
+		name: 'HLFilter',
 		params: {
 			LP:          {L: 0, H:1, D:1},
 			LPSlide:     {L:-1, H:1, D:0},
@@ -303,7 +309,7 @@
 	var PhaserCount = 1 << 10;
 	var PhaserMask = PhaserCount - 1;
 	jsfx.Module.Phaser = {
-		name: "Phaser",
+		name: 'Phaser',
 		params: {
 			Offset: {L:-1, H:1, D:0},
 			Sweep:  {L:-1, H:1, D:0}
@@ -357,7 +363,7 @@
 	//   SUSTAIN | Volume + SustainPunch - Volume
 	//   DECAY   | Volume                - 0
 	jsfx.Module.ASD = {
-		name: "ASD",
+		name: 'ASD',
 		params: {
 			Volume:       { L: 0, H: 1, D: 0.5 },
 			Attack:       { L: 0, H: 1, D: 0.1 },
@@ -455,7 +461,7 @@
 	// Creates an Audio element from audio data [-1.0 .. 1.0]
 	jsfx.CreateAudio = CreateAudio;
 	function CreateAudio(data){
-		assert(data instanceof Float32Array, "data must be an Float32Array");
+		assert(data instanceof Float32Array, 'data must be an Float32Array');
 
 		var blockAlign = numChannels * bitsPerSample >> 3;
 		var byteRate = jsfx.SampleRate * blockAlign;
@@ -477,20 +483,20 @@
 			V(value >> 8, nBytes - 1);
 		}
 
-		S("RIFF"); V(36 + data.length * 2, 4);
+		S('RIFF'); V(36 + data.length * 2, 4);
 
-		S("WAVEfmt "); V(16, 4); V(1, 2);
+		S('WAVEfmt '); V(16, 4); V(1, 2);
 		V(numChannels, 2); V(jsfx.SampleRate, 4);
 		V(byteRate, 4); V(blockAlign, 2); V(bitsPerSample, 2);
 
-		S("data"); V(data.length * 2, 4);
+		S('data'); V(data.length * 2, 4);
 		CopyFToU8(output.subarray(p), data);
 
-		return new Audio("data:audio/wav;base64," + U8ToB64(output));
+		return new Audio('data:audio/wav;base64,' + U8ToB64(output));
 	};
 
 	jsfx.DownloadAsFile = function(audio){
-		assert(audio instanceof Audio, "input must be an Audio object");
+		assert(audio instanceof Audio, 'input must be an Audio object');
 		document.location.href = audio.src;
 	};
 
@@ -501,7 +507,7 @@
 	jsfx.Util.CopyFToU8 = CopyFToU8;
 	function CopyFToU8(into, floats){
 		assert(into.length/2 == floats.length,
-			"the target buffer must be twice as large as the iinput");
+			'the target buffer must be twice as large as the iinput');
 
 		var k = 0;
 		for(var i = 0; i < floats.length; i++){
