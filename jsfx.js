@@ -29,6 +29,23 @@
 		Volume        : 40
 	};
 
+
+	jsfx.InitDefaultParams = InitDefaultParams;
+	function InitDefaultParams(params, modules){
+		// setup modules
+		for(var i = 0; i < modules.length; i += 1){
+			var M = modules[i];
+			var P = params[M.name] || {};
+
+			// add missing parameters
+			map_object(M.params, function(def, name){
+				if(typeof P[name] === 'undefined'){
+					P[name] = def.D;
+				}
+			});
+		}
+	}
+
 	jsfx.Composite = Composite;
 	function Composite(params, modules){
 		this.finished = false;
@@ -42,20 +59,13 @@
 		modules.sort(function(a,b){ return a.stage - b.stage; })
 		this.modules = modules;
 
+		// init missing params
+		InitDefaultParams(params, modules);
+
 		// setup modules
 		for(var i = 0; i < this.modules.length; i += 1){
 			var M = this.modules[i];
-			var P = params[M.name] || {};
-
-			// add missing parameters
-			map_object(M.params, function(def, name){
-				if(typeof P[name] === 'undefined'){
-					P[name] = def.D;
-				}
-			});
-
-			// setup the state
-			this.modules[i].setup(this.state, P);
+			this.modules[i].setup(this.state, params[M.name]);
 		}
 	}
 	Composite.prototype = {
@@ -522,14 +532,14 @@
 		jsfx.Module.Volume
 	];
 
-	jsfx.DefaultParams = DefaultParams;
-	function DefaultParams(){
+	jsfx.EmptyParams = EmptyParams;
+	function EmptyParams(){
 		return map_object(jsfx.Module, function(){ return {} });
 	}
 
 	jsfx.Preset = {
 		Coin: function(){
-			var p = DefaultParams();
+			var p = EmptyParams();
 			p.Frequency.Start = runif(880, 660);
 			p.Volume.Sustain = runif(0.1);
 			p.Volume.Decay = runif(0.4, 0.1);
@@ -541,7 +551,7 @@
 			return p;
 		},
 		Laser: function(){
-			var p = DefaultParams();
+			var p = EmptyParams();
 			p.Generator.Func = rchoose(['square', 'saw', 'sine']);
 
 			if(runif() < 0.33){
@@ -578,7 +588,7 @@
 			return p;
 		},
 		Explosion: function(){
-			var p = DefaultParams();
+			var p = EmptyParams();
 			p.Generator.Func = 'noise';
 			if(runif() < 0.5){
 				p.Frequency.Start = runif(440, 40);
@@ -607,7 +617,7 @@
 			return p;
 		},
 		Powerup: function(){
-			var p = DefaultParams();
+			var p = EmptyParams();
 			if(runif() < 0.5){
 				p.Generator.Func = 'saw';
 			} else {
@@ -632,7 +642,7 @@
 			return p;
 		},
 		Hit: function(){
-			var p = DefaultParams();
+			var p = EmptyParams();
 			p.Generator.Func = rchoose(['square', 'saw', 'noise']);
 			p.Generator.A = runif(0.6);
 			p.Generator.ASlide = runif(0.5);
@@ -649,7 +659,7 @@
 			return p;
 		},
 		Jump: function(){
-			var p = DefaultParams();
+			var p = EmptyParams();
 			p.Generator.Func = 'square';
 			p.Generator.A = runif(0.6);
 
@@ -668,7 +678,7 @@
 			return p;
 		},
 		Select: function(){
-			var p = DefaultParams();
+			var p = EmptyParams();
 			p.Generator.Func = rchoose(['square', 'saw']);
 			p.Generator.A = runif(0.6);
 
