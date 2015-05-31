@@ -7,6 +7,8 @@
 	const numChannels = 1|0;
 	const sin = Math.sin;
 	const pow = Math.pow;
+	const abs = Math.abs;
+	const EPSILON = 0.000001;
 
 	jsfx.SampleRate = 0|0;
 	jsfx.Sec = 0|0;
@@ -229,18 +231,49 @@
 	jsfx.Module.Phaser = {
 		name: "Phaser",
 		params: {
-			Offset: {L:-1, H:1, D:0},
-			Sweep:  {L:-1, H:1, D:0},
+			Offset: {L:-1, H:1, D:0.3},
+			Sweep:  {L:-1, H:1, D:0.6},
 		},
 		stage: stage.SampleMod,
 		setup: function($, P){
 			$.phaserBuffer = new Float32Array(PhaserCount);
-			$.phaserIndex  = 0;
+			$.phaserPos  = 0;
 			$.phaserOffset = pow(P.Offset, 2.0) * (PhaserCount - 4);
 			$.phaserOffsetSlide = pow(P.Sweep, 3.0) * 4000 / $.SampleRate;
 		},
+		enabled: function($){
+			return (abs($.phaserOffsetSlide) > EPSILON) ||
+				(abs($.phaserOffset) > EPSILON);
+		},
 		process: function($, block){
+			if(!this.enabled($)){ return block.length; }
 
+			var buffer = $.phaserBuffer,
+				pos    = $.phaserPos|0,
+				offset = +$.phaserOffset,
+				offsetSlide = +$.phaserOffsetSlide;
+
+			for(var i = 0; i < block.length; i++){
+				offset += offsetSlide;
+				if(offset < 0){
+					offset = -offset;
+					offsetSlide = -offsetSlide;
+				}
+				if(offset > PhaserMask){
+					offset = PhaserMask;
+					offsetSlide = 0;
+				}
+
+				buffer[pos] = block[i];
+				var p = (pos - (offset|0) + PhaserCount) & PhaserMask;
+				block[i] += buffer[p];
+
+				pos = ((pos + 1) & PhaserMask)|0;
+			}
+
+			$.phaserPos = pos;
+			$.phaserOffset = offset;
+			return block.length;
 		}
 	};
 
