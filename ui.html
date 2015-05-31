@@ -6,13 +6,48 @@
 	<title>jsfx</title>
 	<script src="jsfx.js"></script>
 	<style>
+		#view {
+			border: 1px solid #000;
+			width: 700px;
+			height: 400px;
+		}
 	</style>
 </head>
 <body>
 
+<canvas id="view"></canvas>
 <script>
-var data = jsfx.G.synth.generate(440, jsfx.Sec, 0.5);
-var audio = jsfx.CreateAudio(data);
+
+var view = document.getElementById("view");
+view.width = 700; view.height = 400;
+var context = view.getContext("2d");
+context.width = view.clientWidth;
+
+context.clearRect(0, 0, 700, 400);
+context.fillRect(0, 200, 700, 1);
+
+TOTAL = 0;
+context.fillStyle = "hsla(0,70%,40%,1)";
+function plot(i, v){
+	if(i % (1 << 10) != 0) { return }
+	context.fillRect( i*700/TOTAL, 200 - v*100, 1, 1);
+}
+
+var gen = new jsfx.Composite({}, [
+	jsfx.M.Frequency,
+	jsfx.M.Generator,
+	jsfx.M.ASD
+]);
+
+var block = new Float32Array(10*jsfx.Sec);
+TOTAL = block.length;
+
+console.time("generate");
+gen.generate(block);
+console.timeEnd("generate");
+
+//var data = jsfx.G.synth.generate(440, jsfx.Sec, 0.5);
+var audio = jsfx.CreateAudio(block);
 audio.play();
 </script>
 

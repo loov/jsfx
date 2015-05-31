@@ -3,34 +3,27 @@
 	"use asm";
 
 	const chr = String.fromCharCode;
-	const TAU = 6.283185307179586;
-	const TAU_100 = TAU * 100;
-	const bitsPerSample = 16;
-	const numChannels = 1;
+	const TAU = +6.283185307179586;
+	const TAU_LARGE = +TAU * (1 << 8);
+	const bitsPerSample = 16|0;
+	const numChannels = 1|0;
 	const sin = Math.sin;
+	const pow = Math.pow;
 
-	jsfx.SampleRate = 0;
-	jsfx.Sec = 0;
+	jsfx.SampleRate = 0|0;
+	jsfx.Sec = 0|0;
 
 	jsfx.SetSampleRate = function(sampleRate){
-		jsfx.SampleRate = sampleRate;
-		jsfx.Sec = sampleRate;
+		jsfx.SampleRate = sampleRate|0;
+		jsfx.Sec = sampleRate|0;
 	};
 	jsfx.SetSampleRate(getDefaultSampleRate());
 
-
-
-	jsfx.Module = {};
-	var unit = jsfx.unit = {
-		Second: { suffix: "s"  },
-		Hz:     { suffix: "hz" },
-	};
+	jsfx.Module = {}; jsfx.M = jsfx.Module;
 
 	var stage = jsfx.stage = {
 		PhaseSpeed    : 0,
 		PhaseSpeedMod : 1,
-		Phase         : 2,
-		PhaseMod      : 3,
 		Generator     : 4,
 		SampleMod     : 5,
 		Volume        : 6
@@ -43,7 +36,6 @@
 		this.state = {
 			SampleRate: params.SampleRate || jsfx.SampleRate
 		};
-		this.params = [];
 
 		// sort modules
 		modules.sort(function(a,b){ return a.stage - b.stage; })
@@ -59,20 +51,22 @@
 				P[name] = P[name] || def.D;
 			});
 
-			this.params.push(P);
 			// setup the state
-			this.modules[i].setup(this.state, this.params[i]);
+			this.modules[i].setup(this.state, P);
 		}
 	}
 	Composite.prototype = {
-		// convert this into a module
+		//TODO: see whether this can be converted to a module
 		generate: function(block){
-			var $ = this.state;
-			var N = block.length;
+			for(var i = 0; i < block.length; i += 1){
+				block[i] = 0;
+			}
+
+			var $ = this.state,
+				N = block.length|0;
 			for(var i = 0; i < this.modules.length; i += 1){
-				var M = this.modules[i],
-					P = this.params[i];
-				var n = M.process($, P, block);
+				var M = this.modules[i];
+				var n = M.process($, block.subarray(0,N))|0;
 				N = Math.min(N, n);
 			}
 			if(N < block.length){
@@ -90,18 +84,47 @@
 		params: {
 			Start: { L:20, H:2400, D:440  },
 
-			Min:   { L:20, H:2400, D:0    },
-			Max:   { L:20, H:2400, D:2000 },
+			Min: { L:20, H:2400, D:0    },
+			Max: { L:20, H:2400, D:2000 },
 
-			RepeatAfter:  { L: 0, H: 0.8, D: 0},
-			Repeats: { L: 0, H: 0.8, D: 0},
+			Slide:      { L:-1, H:1, D:0 },
+			DeltaSlide: { L:-1, H:1, D:0 },
+
+			//TODO: implement
+			RepeatAfter:  { L: 0, H: 0.8, D: 0 },
+			Repeats:      { L: 0, H:  16, D: 8 }
 		},
 		stage: stage.PhaseSpeed,
 		setup: function($, P){
+			var SR = $.SampleRate;
 
+			$.phaseSpeed    = P.Start * TAU / SR;
+			$.phaseSpeedMax = P.Max * TAU / SR;
+			$.phaseSpeedMin = P.Min * TAU / SR;
+
+			$.phaseSpeedMin = Math.min($.phaseSpeedMin, $.phaseSpeed);
+			$.phaseSpeedMax = Math.max($.phaseSpeedMax, $.phaseSpeed);
+
+			$.phaseSlide = 1.0 + pow(P.Slide, 3.0) * 64.0 / SR;
+			$.phaseDeltaSlide = pow(P.DeltaSlide, 3.0) / (SR * 1000);
 		},
 		process: function($, block){
+			var speed = +$.phaseSpeed,
+				min   = +$.phaseSpeedMin,
+				max   = +$.phaseSpeedMax,
+				slide = +$.phaseSlide,
+				deltaSlide = +$.phaseDeltaSlide;
 
+			for(var i = 0; i < block.length; i++){
+				slide += deltaSlide;
+				speed *= slide;
+				speed = clamp(speed, min, max); //TODO: stop slide after clamp
+				block[i] += speed;
+			}
+
+			$.phaseSpeed = speed;
+			$.phaseSlide = slide;
+			return block.length;
 		}
 	};
 
@@ -109,31 +132,83 @@
 	jsfx.Module.Vibrato = {
 		name: "Vibrato",
 		params: {
-			Depth:      {L: 0,     H:1, D:0},
-			DepthSlide: {L: -0.3,  H:1, D:0},
+			Depth:      {L:  0.0, H:1, D:0},
+			DepthSlide: {L: -0.3, H:1, D:0},
 
-			Frequency:      {L: 0.01, H:48, D:8},
-			FrequencySlide: {L: -1,   H:1,  D:0},
+			Frequency:      {L:  0.01, H:48, D:8},
+			FrequencySlide: {L: -1.00, H: 1, D:0},
 		},
 		stage: stage.PhaseSpeedMod,
 		setup: function($, P){
+			var SR = $.SampleRate;
+			$.vibratoPhase = 0;
+			$.vibratoDepth = P.Depth;
+			$.vibratoPhaseSpeed = P.Frequency * TAU / SR;
 
+			$.vibratoPhaseSpeedSlide = 1.0 + pow(P.FrequencySlide, 3.0) * 3.0 / SR;
+			$.vibratoDepthSlide = P.DepthSlide / SR;
 		},
 		process: function($, block){
+			var phase = +$.vibratoPhase,
+				depth = +$.vibratoDepth,
+				speed = +$.vibratoPhaseSpeed,
+				slide = +$.vibratoPhaseSpeedSlide,
+				depthSlide = +$.vibratoDepthSlide;
 
+			//TODO: optimize if depthSlide == 0 && slide == 0
+			for(var i = 0; i < block.length; i++){
+				phase += speed;
+				phase = wrap(phase);
+				block[i] += block[i] * sin(phase) * depth;
+
+				speed *= slide;
+				depth += depthSlide;
+				depth = clamp1(depth); //TODO: stop slide after clamp
+			}
+
+			$.vibratoPhase = phase;
+			$.vibratoDepth = depth;
+			$.vibratoPhaseSpeed = speed;
+			return block.length;
 		}
 	};
 
-	// Phase
-	jsfx.Module.Phase = {
-		name: "Phase",
-		params: {},
-		stage: stage.Phase,
-		setup: function($, P){
+	// Generator
+	jsfx.Module.Generator = {
+		name: "Generator",
+		params: {
+			// C = choose
+			Func: {C: jsfx.Generator},
 
+			A: {L: 0, H: 1, D: 0.5},
+			B: {L: 0, H: 1, D: 0.5},
+
+			ASlide: {L: -1, H: 1, D: 0},
+			BSlide: {L: -1, H: 1, D: 0}
+		},
+		stage: stage.Generator,
+		setup: function($, P){
+			$.phase = 0;
+			$.generator = sin;
 		},
 		process: function($, block){
+			var gen   = $.generator,
+				phase = +$.phase,
+				A = +$.A, ASlide = +$.ASlide,
+				B = +$.B, BSlide = +$.BSlide;
 
+			//TODO: optimize if ASlide == 0 && BSlide == 0;
+			for(var i = 0; i < block.length; i++){
+				phase += block[i];
+				phase = wrap(phase);
+				A += ASlide; B += BSlide;
+				block[i] = gen(phase, A, B);
+			}
+
+			$.phase = phase;
+			$.A = A;
+			$.B = B;
+			return block.length;
 		}
 	};
 
@@ -146,11 +221,12 @@
 
 		},
 		process: function($, block){
-
 		}
 	};
 
 	// Phaser Effect
+	const PhaserCount = 1 << 10;
+	const PhaserMask = PhaserCount - 1;
 	jsfx.Module.Phaser = {
 		name: "Phaser",
 		params: {
@@ -159,20 +235,10 @@
 		},
 		stage: stage.SampleMod,
 		setup: function($, P){
-
-		},
-		process: function($, block){
-
-		}
-	};
-
-	// Generator
-	jsfx.Module.Generator = {
-		name: "Generator",
-		params: {},
-		stage: stage.Generator,
-		setup: function($, P){
-
+			$.phaserBuffer = new Float32Array(PhaserCount);
+			$.phaserIndex  = 0;
+			$.phaserOffset = pow(P.Offset, 2.0) * (PhaserCount - 4);
+			$.phaserOffsetSlide = pow(P.Sweep, 3.0) * 4000 / $.SampleRate;
 		},
 		process: function($, block){
 
@@ -186,22 +252,22 @@
 	jsfx.Module.ASD = {
 		name: "ASD",
 		params: {
-			Volume:       { L: 0, H: 1, D: 0.4},
-			Attack:       { L: 0, H: 1, D: 0.1, u: unit.Second},
-			Sustain:      { L: 0, H: 2, D: 0.3, u: unit.Second},
-			SustainPunch: { L: 0, H: 3, D: 2.0},
-			Decay:        { L: 0, H: 2, D: 1.0, u: unit.Second},
+			Volume:       { L: 0, H: 1, D: 0.5 },
+			Attack:       { L: 0, H: 1, D: 0.1 },
+			Sustain:      { L: 0, H: 2, D: 0.3 },
+			SustainPunch: { L: 0, H: 3, D: 1.0 },
+			Decay:        { L: 0, H: 2, D: 2   },
 		},
 		stage: stage.VolumeControl,
 		setup: function($, P){
 			var SR = $.SampleRate;
 			var V = P.Volume;
-			var SP = V + P.SustainPunch;
+			var SP = V * (1 + P.SustainPunch);
 			$.envelopes = [
 				// S = start volume, E = end volume, N = duration in samples
-				{S:  0, E: SP, N: (P.Attack  * SR)|0 },
-				{S: SP, E:  V, N: (P.Sustain * SR)|0 },
-				{S:  V, E:  0, N: (P.Decay   * SR)|0 },
+				{S:  0, E:   V, N: (P.Attack  * SR)|0 }, // Attack
+				{S: SP, E:   V, N: (P.Sustain * SR)|0 }, // Sustain
+				{S:  V, E:   0, N: (P.Decay   * SR)|0 }  // Decay
 			];
 			// G = volume gradient
 			$.envelopes.map(function(e){ e.G = (e.E - e.S) / e.N; })
@@ -209,17 +275,21 @@
 		process: function($, block){
 			var i = 0;
 			while(($.envelopes.length > 0) && (i < block.length)){
-				var E = $.envelope;
-				var Vol = E.S, Grad = E.G;
-				var N = Math.min(block.length - i, i + E.N);
-				var end = i + N;
+				var E = $.envelopes[0];
+				var vol = E.S,
+					grad = E.G;
+
+				var N = Math.min(block.length - i, E.N)|0;
+				var end = (i+N)|0;
 				for(; i < end; i += 1){
-					block[i] *= Vol;
-					Vol += Grad;
+					block[i] *= vol;
+					vol += grad;
+					vol = clamp(vol, 0, 10);
+					plot(i, vol);
 				}
-				E.S = Vol;
+				E.S = vol;
 				E.N -= N;
-				if(E.N == 0){
+				if(E.N <= 0){
 					$.envelopes.shift();
 				}
 			}
@@ -228,6 +298,7 @@
 	};
 
 	// STATELESS GENERATORS
+
 	jsfx.G = {
 		// uniform noise
 		unoise: Math.random,
@@ -261,9 +332,7 @@
 		for(var i = 0; i < data.length; i++){
 			data[i] = gen(phase, A, B);
 			phase += phaseStep;
-			if(phaseStep > TAU_100){
-				phaseStep -= TAU_100;
-			}
+			phase = wrap(phase);
 		}
 		return data;
 	}
@@ -360,6 +429,28 @@
 	// for checking pre/post conditions
 	function assert(condition, message){
 		if(!condition){ throw new Error(message); }
+	}
+
+	function clamp(v, min, max){
+		v = +v; min = +min; max = +max;
+		if(v < min){ return +min; }
+		if(v > max){ return +max; }
+		return +v;
+	}
+
+	function clamp1(v){
+		v = +v;
+		if(v < +0.0){ return +0.0; }
+		if(v > +1.0){ return +1.0; }
+		return +v;
+	}
+
+	function wrap(v){
+		v = +v;
+		if(v > TAU_LARGE){
+			return v - TAU_LARGE;
+		}
+		return v;
 	}
 
 	function map_object(obj, fn){
