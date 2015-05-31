@@ -97,6 +97,7 @@
 		// Live creates an managed AudioContext for playing.
 		// This is useful, when you want to use procedurally generated sounds.
 		jsfx.Live = function(paramset){
+			//TODO: add limit for number of notes played at the same time
 			var context = new AudioContext();
 			var volume = context.createGain();
 			volume.connect(context.destination);
@@ -389,7 +390,7 @@
 				phase += block[i];
 				if(phase > TAU){ phase -= TAU };
 				A += ASlide; B += BSlide;
-				block[i] = $.generator(phase, A, B);
+				block[i] = $.generator(phase, A, B, block[i]);
 			}
 
 			$.generatorPhase = phase;
@@ -872,7 +873,9 @@
 	jsfx.G.synth = function(phase){
 		return sin(phase) + .5*sin(phase/2) + .3*sin(phase/4);
 	};
-	// STATEFUL noise
+	
+	// STATEFUL
+	// noise
 	jsfx.G.noise = {
 		create: function(){
 			var last = Math.random();
@@ -882,6 +885,35 @@
 				}
 				return last;
 			};
+		}
+	};
+	
+	// Karplus-Strong string
+	jsfx.G.string = {
+		create: function(){
+			var BS = 1 << 1;
+			var BM = BS-1;
+			
+			var buffer = new Float32Array(BS);
+			for(var i = 0; i < buffer.length; i++){
+				buffer[i] = Math.random()*2-1;
+			}
+
+			var head = 0;
+			return function(phase, A, B, phaseSpeed){
+				var n = (TAU/phaseSpeed)|0;
+				n = n > BS ? BS : n;
+				
+				var t = ((head - n) + BS) & BM;
+				buffer[head] = (
+					buffer[(t-0+BS)&BM] +
+					buffer[(t-1+BS)&BM]*A +
+					buffer[(t-2+BS)&BM]*B) / (1+A+B);
+
+				var r = buffer[head];
+				head = (head + 1) & BM;
+				return r;
+			}
 		}
 	};
 
