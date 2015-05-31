@@ -23,15 +23,7 @@ for(var name in jsfx.Preset) {
 	b.innerText = name;
 	b.onclick = (function(preset){
 		return function(){
-			var params = preset();
-			gen = new jsfx.Composite(params, jsfx.DefaultModules);
-			var data = new Float32Array(3*jsfx.Sec);
-
-			console.time("generate");
-			gen.generate(data);
-			console.timeEnd("generate");
-
-			jsfx.CreateAudio(data).play();
+			jsfx.Sound(preset()).play();
 		}
 	})(jsfx.Preset[name]);
 

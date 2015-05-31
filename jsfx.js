@@ -19,6 +19,24 @@
 	};
 	jsfx.SetSampleRate(getDefaultSampleRate());
 
+	// MAIN API
+	jsfx.Sound = function(params){
+		var gen = new Processor(params, jsfx.DefaultModules);
+		var SampleCount = 0;
+		for(var i = 0; i < gen.state.envelopes.length; i += 1){
+			SampleCount += gen.state.envelopes[i].N;
+		}
+		if(SampleCount === 0){
+			SampleCount = 3*jsfx.Sec;
+		}
+
+		var block = new Float32Array(SampleCount);
+		gen.generate(block);
+
+		return CreateAudio(block);
+	};
+
+	// SOUND GENERATION
 	jsfx.Module = {};
 
 	var stage = jsfx.stage = {
@@ -28,7 +46,6 @@
 		SampleMod     : 30,
 		Volume        : 40
 	};
-
 
 	jsfx.InitDefaultParams = InitDefaultParams;
 	function InitDefaultParams(params, modules){
@@ -46,8 +63,8 @@
 		}
 	}
 
-	jsfx.Composite = Composite;
-	function Composite(params, modules){
+	jsfx.Processor = Processor;
+	function Processor(params, modules){
 		this.finished = false;
 
 		this.state = {
@@ -68,7 +85,7 @@
 			this.modules[i].setup(this.state, params[M.name]);
 		}
 	}
-	Composite.prototype = {
+	Processor.prototype = {
 		//TODO: see whether this can be converted to a module
 		generate: function(block){
 			for(var i = 0|0; i < block.length; i += 1){
