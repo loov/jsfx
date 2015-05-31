@@ -78,7 +78,7 @@
 		return sounds;
 	}
 
-	if(AudioContext){
+	if(typeof AudioContext !== "undefined"){
 		// Node creates a new AudioContext ScriptProcessor that outputs the
 		// sound. It will automatically disconnect, unless otherwise specified.
 		jsfx.Node = function(audioContext, params, bufferSize, stayConnected){
@@ -730,7 +730,7 @@
 			}
 
 			if(runif() < 0.2){ p.Frequency.Slide = 0; }
-			if(runif() < 0.3){ p.RepeatSpeed = runif(0.5, 0.3); }
+			if(runif() < 0.3){ p.Frequency.RepeatSpeed = runif(0.5, 0.3); }
 
 			p.Volume.Sustain = runif(0.3, 0.1);
 			p.Volume.Decay   = runif(0.5);
