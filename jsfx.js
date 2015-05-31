@@ -114,7 +114,10 @@
 				},
 				context: context,
 				play: play,
-
+				Play: function(params){
+					var node = jsfx.Node(context, params, 2048);
+					node.connect(volume);
+				},
 				get volume(){ return volume.gain.value; },
 				set volume(v){ volume.gain.value = v; }
 			};
@@ -124,6 +127,9 @@
 	// SOUND GENERATION
 	jsfx.Module = {};
 
+	// generators
+	jsfx.G = {};
+
 	var stage = jsfx.stage = {
 		PhaseSpeed    : 0,
 		PhaseSpeedMod : 10,
@@ -131,6 +137,7 @@
 		SampleMod     : 30,
 		Volume        : 40
 	};
+	function byStage(a,b){ return a.stage - b.stage; }
 
 	jsfx.InitDefaultParams = InitDefaultParams;
 	function InitDefaultParams(params, modules){
@@ -163,7 +170,7 @@
 
 		// sort modules
 		modules = modules.slice();
-		modules.sort(function(a,b){ return a.stage - b.stage; })
+		modules.sort(byStage)
 		this.modules = modules;
 
 		// init missing params
@@ -585,7 +592,7 @@
 	jsfx.Module.Volume = {
 		name: 'Volume',
 		params: {
-			Volume:  { L: 0, H: 1, D: 0.5 },
+			Master:  { L: 0, H: 1, D: 0.5 },
 			Attack:  { L: 0, H: 1, D: 0.01 },
 			Sustain: { L: 0, H: 2, D: 0.3 },
 			Punch:   { L: 0, H: 3, D: 1.0 },
@@ -594,7 +601,7 @@
 		stage: stage.Volume,
 		setup: function($, P){
 			var SR = $.SampleRate;
-			var V = P.Volume;
+			var V = P.Master;
 			var VP = V * (1 + P.Punch);
 			$.envelopes = [
 				// S = start volume, E = end volume, N = duration in samples
@@ -639,6 +646,7 @@
 		jsfx.Module.Phaser,
 		jsfx.Module.Volume
 	];
+	jsfx.DefaultModules.sort(byStage);
 
 	jsfx.EmptyParams = EmptyParams;
 	function EmptyParams(){
@@ -646,6 +654,9 @@
 	}
 
 	jsfx.Preset = {
+		Reset: function(){
+			return EmptyParams();
+		},
 		Coin: function(){
 			var p = EmptyParams();
 			p.Frequency.Start = runif(880, 660);
@@ -797,46 +808,60 @@
 
 			p.Filter.HP = 0.2;
 			return p;
+		},
+		Lucky: function(){
+			var p = EmptyParams();
+			map_object(p, function(out, moduleName){
+				var defs = jsfx.Module[moduleName].params;
+				map_object(defs, function(def, name){
+					if(def.C){
+						var values = Object.keys(def.C);
+						out[name] = values[(values.length * Math.random()) | 0];
+					} else {
+						out[name] = Math.random() * (def.H - def.L) + def.L;
+					}
+				});
+			});
+			p.Volume.Master = 0.4;
+			p.Filter = {}; // disable filter, as it usually will clip everything
+			return p;
 		}
 	};
 
 	// GENERATORS
-	jsfx.G = {
-		// STATELESS
-		// uniform noise
-		unoise: Math.random,
-		// sine wave
-		sine: Math.sin,
-		// saw wave
-		saw: function(phase){
-			return 2*(phase/TAU - ((phase/TAU + 0.5)|0));
-		},
-		// triangle wave
-		triangle: function(phase){
-			return Math.abs(4 * ((phase/TAU - 0.25)%1) - 2) - 1;
-		},
-		// square wave
-		square: function(phase, A){
-			var s = sin(phase);
-			return s > A ? 1.0 : s < A ? -1.0 : A;
-		},
-		// simple synth
-		synth: function(phase){
-			return sin(phase) + .5*sin(phase/2) + .3*sin(phase/4);
-		},
 
-		// STATEFUL
-		// noise
-		noise: {
-			create: function(){
-				var last = Math.random();
-				return function(phase){
-					if(phase % TAU < 4){
-						last = Math.random() * 2 - 1;
-					}
-					return last;
-				};
-			}
+	// STATELESS
+	// uniform noise
+	jsfx.G.unoise = Math.random;
+	// sine wave
+	jsfx.G.sine = Math.sin;
+	// saw wave
+	jsfx.G.saw = function(phase){
+		return 2*(phase/TAU - ((phase/TAU + 0.5)|0));
+	};
+	// triangle wave
+	jsfx.G.triangle = function(phase){
+		return Math.abs(4 * ((phase/TAU - 0.25)%1) - 2) - 1;
+	};
+	// square wave
+	jsfx.G.square = function(phase, A){
+		var s = sin(phase);
+		return s > A ? 1.0 : s < A ? -1.0 : A;
+	};
+	// simple synth
+	jsfx.G.synth = function(phase){
+		return sin(phase) + .5*sin(phase/2) + .3*sin(phase/4);
+	};
+	// STATEFUL noise
+	jsfx.G.noise = {
+		create: function(){
+			var last = Math.random();
+			return function(phase){
+				if(phase % TAU < 4){
+					last = Math.random() * 2 - 1;
+				}
+				return last;
+			};
 		}
 	};
 

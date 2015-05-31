@@ -1,36 +1,262 @@
 <!DOCTYPE html>
-<html>
 <head>
 	<meta charset="utf-8">
-	<meta http-equiv="X-UA-Compatible" content="IE=edge">
+	<meta http-eqJSFXv="X-UA-Compatible" content="IE=edge">
 	<title>jsfx</title>
 	<script src="jsfx.js"></script>
-	<style>
-		#view {
-			border: 1px solid #000;
-			width: 700px;
-			height: 400px;
-		}
-	</style>
 </head>
 <body>
-	<div id="buttons"></div>
-<script>
-var AC = new AudioContext();
-var buttons = document.getElementById("buttons");
-
-for(var name in jsfx.Preset) {
-	var b = document.createElement("button");
-	b.innerText = name;
-	b.onclick = (function(preset){
-		return function(){
-			jsfx.Sound(preset).play();
-		}
-	})(jsfx.Preset[name]);
-
-	buttons.appendChild(b);
-}
-</script>
-
+	<div id="jsfx">
+		<h1 class="title">jsfx</h1>
+		<div id="control" class="panel">
+			<div class="panel-title">Control</div>
+			<button onclick="PlayCurrent()">Play</button>
+			<div id="last-time" title="Time it took to generate.">10ms</div>
+			<div class="clear"></div>
+		</div>
+		<div id="presets" class="panel">
+			<div class="panel-title">Presets</div>
+		</div>
+		<div class="clear"></div>
+		<div id="panels">
+		</div>
+	</div>
 </body>
-</html>
+<script>
+var Live = jsfx.Live({});
+
+var CurrentParams = jsfx.EmptyParams();
+function PlayCurrent(){
+	//Live.Play(CurrentParams);
+	var start = (new Date())|0;
+	jsfx.Sound(CurrentParams).play();
+	var stop = (new Date())|0;
+	var time = (stop - start) + "ms"
+	console.log("Generated in", time);
+	document.getElementById("last-time").innerText = time;
+}
+
+function SelectPreset(preset){
+	CurrentParams = preset();
+	UpdateCurrentView();
+	PlayCurrent();
+}
+
+function UpdateCurrentView(){
+	// create a copy of params
+	var params = JSON.parse(JSON.stringify(CurrentParams));
+	jsfx.InitDefaultParams(params, jsfx.DefaultModules);
+	list(params, function(moduleName, params){
+		list(params, function(paramName, paramValue){
+			var element = document.getElementById(moduleName + "$" + paramName);;
+			if(element){
+				element.value = paramValue;
+			}
+			var element = document.getElementById(moduleName + "_" + paramName + "_" + paramValue);
+			if(element){
+				element.checked = true;
+			}
+		});
+	});
+}
+
+function ModifyValue(moduleName, paramName, newValue){
+	// console.log("CHANGE", moduleName, paramName, newValue);
+	CurrentParams[moduleName][paramName] = newValue;
+	PlayCurrent();
+}
+
+function CreateParam(name, def, module){
+	var sel;
+	if(def.C){
+		sel = E("form", "", list(def.C, function(value){
+			var input = E("input", "", []);
+			input.type = "radio";
+			input.id   = module.name + "_" + name + "_" + value;
+			input.name  = module.name + "_" + name;
+			input.value = value;
+			input.onchange = function(ev){
+				ModifyValue(module.name, name, input.value);
+			};
+
+			var label = E("label", "", value);
+			label.htmlFor = input.id;
+			return E("span", "radio-option", [input, label]);
+		}));
+	} else {
+		sel = E("input", "", []);
+		sel.type = "range";
+		sel.min = def.L;
+		sel.max = def.H;
+		sel.value = def.D;
+		sel.step = 0.01;
+		sel.onchange = function(ev){
+			ModifyValue(module.name, name, parseFloat(sel.value));
+		};
+		if(def.H - def.L > 10){
+			sel.step = 1;
+		}
+	}
+	sel.id = module.name + "$" + name;
+
+	return E("tr", "", [
+		E("td", "", name),
+		E("td", "", [sel])
+	]);
+}
+
+function CreatePanel(module){
+	return E("div", "panel", [
+		E("div", "panel-title", module.name),
+		E("table", "", list(module.params, CreateParam, module))
+	]);
+}
+
+function Add(module){
+	document.getElementById("panels").appendChild(CreatePanel(module));
+}
+
+Add(jsfx.Module.Generator);
+Add(jsfx.Module.Frequency);
+Add(jsfx.Module.Volume);
+Add(jsfx.Module.Vibrato);
+Add(jsfx.Module.Filter);
+Add(jsfx.Module.Phaser);
+document.getElementById("panels").appendChild(E("div", "clear", []));
+
+list(jsfx.Preset, function(name, preset){
+	var button = E("button", "", name);
+	button.onclick = function(){ SelectPreset(preset); };
+	document.getElementById("presets").appendChild(button);
+});
+document.getElementById("presets").appendChild(E("div", "clear", []));
+
+function E(tag, className, content){
+	var el = document.createElement(tag);
+	if(className !== ''){
+		el.className = className;
+	}
+	if(typeof content == 'object'){
+		for(var i = 0; i < content.length; i += 1){
+			el.appendChild(content[i]);
+		}
+	} else if (typeof content == 'string'){
+		el.innerText = content;
+	}
+	return el;
+}
+
+function list(obj, fn, X){
+	var r = [];
+	for(var name in obj){
+		if(obj.hasOwnProperty(name)){
+			r.push(fn(name, obj[name], X));
+		}
+	}
+	return r;
+}
+
+UpdateCurrentView();
+</script>
+<style>
+	* { margin: 0; padding: 0; box-sizing: border-box; }
+	body, html {
+		font-family: RobotoDraft,Roboto,Helvetica Neue,Helvetica,Arial,sans-serif;
+		font-weight: 300;
+		line-height: 1.2;
+		color: #333333;
+	}
+	.clear { clear: both; }
+
+	#jsfx {
+		margin: 32px auto;
+		max-width: 650px;
+	}
+
+	#jsfx .title {
+		margin-left: 8px;
+		margin-bottom: 16px;
+		font-size: 2em;
+		color: #444;
+	}
+
+	#jsfx .panel {
+		float: left;
+		clear: left;
+
+		position: relative;
+		margin: 8px;
+		padding: 4px;
+
+		width: 300px;
+
+		background: #FFF;
+		box-shadow: 0 1px 4px 0 rgba(0, 0, 0, 0.37);
+	}
+
+	#jsfx .panel:nth-child(2n) {
+		float: right;
+		clear: right;
+	}
+
+	@media(max-width: 650px){
+		#jsfx {
+			width: 100%;
+			margin: 0;
+		}
+		#jsfx .panel {
+			float: none !important;
+			clear: none !important;
+			margin: 8px 0;
+			width: 100%;
+		}
+	}
+
+	#jsfx .panel .panel-title {
+		padding: 4px;
+		font-size: 12px;
+		color: #666;
+	}
+
+	#jsfx .panel button {
+		margin: 2px;
+		float: left;
+		border: 1px solid #AAA;
+		background: #FFF;
+		cursor: pointer;
+		padding: 4px 8px;
+	}
+
+	#jsfx .panel button:hover {
+		border: 1px solid #7DC6FF;
+		box-shadow: 0 1px 4px 0 rgba(0, 0, 0, 0.37);
+	}
+
+	#jsfx .panel table {
+		font-size: 0.8em;
+		width: 100%;
+	}
+
+	#jsfx .panel table input[type="range"] { width: 100%; }
+	#jsfx .panel table tr td:first-child   { width: 80px; }
+
+	#jsfx .panel .radio-option {
+		display: inline-block;
+		margin-left: 2px;
+		line-height: 10px;
+		border: 1px solid #eee;
+		margin: 2px 4px;
+		padding: 2px 4px;
+		width: 40%;
+	}
+
+	#jsfx .panel .radio-option input {
+		height: 10px;
+	}
+
+	#jsfx #last-time {
+		position: absolute;
+		bottom: 4px;
+		right: 8px;
+	}
+</style>
