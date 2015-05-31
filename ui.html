@@ -33,11 +33,10 @@ function plot(i, v){
 	context.fillRect( i*700/TOTAL, 200 - v*150, 1, v*150);
 }
 
-var gen = new jsfx.Composite({
-},[
+var gen = new jsfx.Composite({},[
 	jsfx.Module.Frequency,
 	jsfx.Module.Vibrato,
-	jsfx.Module.Generator,
+	jsfx.Module.Guitar,
 	jsfx.Module.HLFilter,
 	jsfx.Module.Phaser,
 	jsfx.Module.ASD

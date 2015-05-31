@@ -191,7 +191,7 @@
 		},
 		stage: stage.Generator,
 		setup: function($, P){
-			$.phase = 0;
+			$.generatorPhase = 0;
 
 			if(typeof P.Func === 'string'){
 				$.generator = jsfx.G[P.Func];
@@ -200,15 +200,15 @@
 			}
 			assert(typeof $.generator === 'function', "generator must be a function")
 
-			$.A = P.A;
-			$.ASlide = P.ASlide / $.SampleRate;
-			$.B = P.B;
-			$.BSlide = P.BSlide / $.SampleRate;
+			$.generatorA = P.A;
+			$.generatorASlide = P.ASlide / $.SampleRate;
+			$.generatorB = P.B;
+			$.generatorBSlide = P.BSlide / $.SampleRate;
 		},
 		process: function($, block){
-			var phase = +$.phase,
-				A = +$.A, ASlide = +$.ASlide,
-				B = +$.B, BSlide = +$.BSlide;
+			var phase = +$.generatorPhase,
+				A = +$.generatorA, ASlide = +$.generatorASlide,
+				B = +$.generatorB, BSlide = +$.generatorBSlide;
 
 			for(var i = 0; i < block.length; i++){
 				phase += block[i];
@@ -217,12 +217,65 @@
 				block[i] = $.generator(phase, A, B);
 			}
 
-			$.phase = phase;
-			$.A = A;
-			$.B = B;
+			$.generatorPhase = phase;
+			$.generatorA = A;
+			$.generatorB = B;
 			return block.length;
 		}
 	};
+
+	// Karplus Strong algorithm for string sound
+	var GuitarBufferSize = 1 << 16;
+	jsfx.Module.Guitar = {
+		name: 'Guitar',
+		params: {
+			A: {L:0.0, H:1.0, D: 1},
+			B: {L:0.0, H:1.0, D: 1},
+			C: {L:0.0, H:1.0, D: 1},
+		},
+		stage: stage.Generator,
+		setup: function($, P){
+			$.guitarA = P.A;
+			$.guitarB = P.B;
+			$.guitarC = P.C;
+
+			$.guitarBuffer = new Float32Array(GuitarBufferSize);
+			$.guitarHead = 0;
+			var B = $.guitarBuffer;
+			for(var i = 0; i < B.length; i++){
+				B[i] = Math.random()*2 - 1;
+			}
+		},
+		process: function($, block){
+			var BS = GuitarBufferSize,
+				BM = BS - 1;
+
+			var A = +$.guitarA, B = +$.guitarB, C = +$.guitarC;
+			var T = A + B + C;
+			var h = $.guitarHead;
+
+			var buffer = $.guitarBuffer;
+
+			for(var i = 0; i < block.length; i++){
+				// buffer size
+				var n = (TAU / block[i])|0;
+				n = n > BS ? BS : n;
+
+				// tail
+				var t = ((h - n) + BS) & BM;
+				buffer[h] =
+					(buffer[(t-0+BS)&BM]*A +
+					 buffer[(t-1+BS)&BM]*B +
+					 buffer[(t-2+BS)&BM]*C) / T;
+
+				block[i] = buffer[h];
+				h = (h + 1) & BM;
+			}
+
+			$.guitarHead = h;
+			return block.length;
+		}
+	}
 
 	// Low/High-Filter
 	jsfx.Module.HLFilter = {
@@ -306,8 +359,7 @@
 	};
 
 	// Phaser Effect
-	var PhaserCount = 1 << 10;
-	var PhaserMask = PhaserCount - 1;
+	var PhaserBufferSize = 1 << 10;
 	jsfx.Module.Phaser = {
 		name: 'Phaser',
 		params: {
@@ -316,9 +368,9 @@
 		},
 		stage: stage.SampleMod + 1,
 		setup: function($, P){
-			$.phaserBuffer = new Float32Array(PhaserCount);
+			$.phaserBuffer = new Float32Array(PhaserBufferSize);
 			$.phaserPos  = 0;
-			$.phaserOffset = pow(P.Offset, 2.0) * (PhaserCount - 4);
+			$.phaserOffset = pow(P.Offset, 2.0) * (PhaserBufferSize - 4);
 			$.phaserOffsetSlide = pow(P.Sweep, 3.0) * 4000 / $.SampleRate;
 		},
 		enabled: function($){
@@ -327,6 +379,9 @@
 		},
 		process: function($, block){
 			if(!this.enabled($)){ return block.length; }
+
+			var BS = PhaserBufferSize,
+				BM = BS - 1;
 
 			var buffer = $.phaserBuffer,
 				pos    = $.phaserPos|0,
@@ -340,16 +395,16 @@
 					offset = -offset;
 					offsetSlide = -offsetSlide;
 				}
-				if(offset > PhaserMask){
-					offset = PhaserMask;
+				if(offset > BM){
+					offset = BM;
 					offsetSlide = 0;
 				}
 
 				buffer[pos] = block[i];
-				var p = (pos - (offset|0) + PhaserCount) & PhaserMask;
+				var p = (pos - (offset|0) + BS) & BM;
 				block[i] += buffer[p];
 
-				pos = ((pos + 1) & PhaserMask)|0;
+				pos = ((pos + 1) & BM)|0;
 			}
 
 			$.phaserPos = pos;
@@ -369,7 +424,7 @@
 			Attack:       { L: 0, H: 1, D: 0.1 },
 			Sustain:      { L: 0, H: 2, D: 0.3 },
 			SustainPunch: { L: 0, H: 3, D: 1.0 },
-			Decay:        { L: 0, H: 2, D: 2   }
+			Decay:        { L: 0, H: 2, D: 1   }
 		},
 		stage: stage.Volume,
 		setup: function($, P){
