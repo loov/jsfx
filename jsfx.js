@@ -1,14 +1,14 @@
 (function(jsfx){
 	"use strict";
 
-	const chr = String.fromCharCode;
-	const TAU = +Math.PI*2;
-	const bitsPerSample = 16|0;
-	const numChannels = 1|0;
-	const sin = Math.sin;
-	const pow = Math.pow;
-	const abs = Math.abs;
-	const EPSILON = 0.000001;
+	var chr = String.fromCharCode;
+	var TAU = +Math.PI*2;
+	var bitsPerSample = 16|0;
+	var numChannels = 1|0;
+	var sin = Math.sin;
+	var pow = Math.pow;
+	var abs = Math.abs;
+	var EPSILON = 0.000001;
 
 	jsfx.SampleRate = 0|0;
 	jsfx.Sec = 0|0;
@@ -19,14 +19,14 @@
 	};
 	jsfx.SetSampleRate(getDefaultSampleRate());
 
-	jsfx.Module = {}; jsfx.M = jsfx.Module;
+	jsfx.Module = {};
 
 	var stage = jsfx.stage = {
 		PhaseSpeed    : 0,
-		PhaseSpeedMod : 1,
-		Generator     : 4,
-		SampleMod     : 5,
-		Volume        : 6
+		PhaseSpeedMod : 10,
+		Generator     : 20,
+		SampleMod     : 30,
+		Volume        : 40
 	};
 
 	jsfx.Composite = Composite;
@@ -136,7 +136,7 @@
 			DepthSlide: {L:-1, H:1, D:0},
 
 			Frequency:      {L:  0.01, H:48, D:8},
-			FrequencySlide: {L: -1.00, H: 1, D:0},
+			FrequencySlide: {L: -1.00, H: 1, D:0}
 		},
 		stage: stage.PhaseSpeedMod,
 		setup: function($, P){
@@ -181,7 +181,7 @@
 		name: "Generator",
 		params: {
 			// C = choose
-			Func: {C: jsfx.Generator},
+			Func: {C: jsfx.G},
 
 			A: {L: 0, H: 1, D: 0.5},
 			B: {L: 0, H: 1, D: 0.5},
@@ -193,6 +193,11 @@
 		setup: function($, P){
 			$.phase = 0;
 			$.generator = sin;
+
+			$.A = P.A;
+			$.ASlide = P.ASlide;
+			$.B = P.B;
+			$.BSlide = P.BSlide;
 		},
 		process: function($, block){
 			var phase = +$.phase,
@@ -216,25 +221,94 @@
 	// Low/High-Filter
 	jsfx.Module.HLFilter = {
 		name: "HLFilter",
-		params: {},
-		stage: stage.SampleMod,
+		params: {
+			LP:          {L: 0, H:1, D:1},
+			LPSlide:     {L:-1, H:1, D:0},
+			LPResonance: {L: 0, H:1, D:0},
+			HP:          {L: 0, H:1, D:0},
+			HPSlide:     {L:-1, H:1, D:0}
+		},
+		stage: stage.SampleMod + 0,
 		setup: function($, P){
+			$.HLEnabled = (P.HP > EPSILON) || (P.LP < 1 - EPSILON);
 
+			$.LPEnabled = P.LP < 1 - EPSILON;
+			$.LP = pow(P.LP, 3.0) / 10;
+			$.LPSlide = 1.0 + P.LPSlide * 100 / $.SampleRate;
+			$.LPPos = 0;
+			$.LPPosSlide = 0;
+
+			$.LPDamping = 5.0 / (1.0 + pow(P.LPResonance, 2) * 20) * (0.01 + P.LP);
+			$.LPDamping = 1.0 - Math.min($.LPDamping, 0.8);
+
+			$.HP = pow(P.HP, 2.0) / 10;
+			$.HPPos = 0;
+			$.HPSlide = 1.0 + P.HPSlide * 100 / $.SampleRate;
+		},
+		enabled: function($){
+			return $.HLEnabled;
 		},
 		process: function($, block){
+			if(!this.enabled($)){ return block.length; }
+
+			var lp         = +$.LP;
+			var lpPos      = +$.LPPos;
+			var lpPosSlide = +$.LPPosSlide;
+			var lpSlide    = +$.LPSlide;
+			var lpDamping  = +$.LPDamping;
+			var lpEnabled  = +$.LPEnabled;
+
+			var hp      = +$.HP;
+			var hpPos   = +$.HPPos;
+			var hpSlide = +$.HPSlide;
+
+			for(var i = 0; i < block.length; i++){
+				if((hp > EPSILON) || (hp < -EPSILON)){
+					hp *= hpSlide;
+					hp = hp < EPSILON ? EPSILON: hp > 0.1 ? 0.1 : hp;
+				}
+
+				var lpPos_ = lpPos;
+
+				lp *= lpSlide;
+				lp = lp < 0 ? lp = 0 : lp > 0.1 ? 0.1 : lp;
+
+				var sample = block[i];
+				if(lpEnabled){
+					lpPosSlide += (sample - lpPos) * lp;
+					lpPosSlide *= lpDamping;
+				} else {
+					lpPos = sample;
+					lpPosSlide = 0;
+				}
+				lpPos += lpPosSlide;
+
+				hpPos += lpPos - lpPos_;
+				hpPos *= 1.0 - hp;
+
+				block[i] = hpPos;
+			}
+
+			$.LPPos = lpPos;
+			$.LPPosSlide = lpPosSlide;
+			$.LP = lp;
+			$.HP = hp;
+			$.HPPos = hpPos;
+
+			return block.length;
 		}
 	};
 
 	// Phaser Effect
-	const PhaserCount = 1 << 10;
-	const PhaserMask = PhaserCount - 1;
+	var PhaserCount = 1 << 10;
+	var PhaserMask = PhaserCount - 1;
 	jsfx.Module.Phaser = {
 		name: "Phaser",
 		params: {
-			Offset: {L:-1, H:1, D:0.3},
-			Sweep:  {L:-1, H:1, D:0.6},
+			Offset: {L:-1, H:1, D:0},
+			Sweep:  {L:-1, H:1, D:0}
 		},
-		stage: stage.SampleMod,
+		stage: stage.SampleMod + 1,
 		setup: function($, P){
 			$.phaserBuffer = new Float32Array(PhaserCount);
 			$.phaserPos  = 0;
@@ -255,6 +329,7 @@
 
 			for(var i = 0; i < block.length; i++){
 				offset += offsetSlide;
+				//TODO: check whether this is correct
 				if(offset < 0){
 					offset = -offset;
 					offsetSlide = -offsetSlide;
@@ -288,9 +363,9 @@
 			Attack:       { L: 0, H: 1, D: 0.1 },
 			Sustain:      { L: 0, H: 2, D: 0.3 },
 			SustainPunch: { L: 0, H: 3, D: 1.0 },
-			Decay:        { L: 0, H: 2, D: 2   },
+			Decay:        { L: 0, H: 2, D: 2   }
 		},
-		stage: stage.VolumeControl,
+		stage: stage.Volume,
 		setup: function($, P){
 			var SR = $.SampleRate;
 			var V = P.Volume;
@@ -351,7 +426,7 @@
 		// simple synth
 		synth: function(phase){
 			return sin(phase) + .5*sin(phase/2) + .3*sin(phase/4);
-		},
+		}
 	};
 
 	// Generates samples using given frequency and generator
@@ -440,7 +515,7 @@
 	}
 
 	function U8ToB64(data){
-		const CHUNK = 0x8000;
+		var CHUNK = 0x8000;
 		var result = '';
 		for(var start = 0; start < data.length; start += CHUNK){
 			var end = Math.min(start + CHUNK, data.length);

@@ -35,11 +35,12 @@ function plot(i, v){
 
 var gen = new jsfx.Composite({
 },[
-	jsfx.M.Frequency,
-	jsfx.M.Vibrato,
-	jsfx.M.Generator,
-	jsfx.M.Phaser,
-	jsfx.M.ASD
+	jsfx.Module.Frequency,
+	jsfx.Module.Vibrato,
+	jsfx.Module.Generator,
+	jsfx.Module.HLFilter,
+	jsfx.Module.Phaser,
+	jsfx.Module.ASD
 ]);
 
 var block = new Float32Array(3*jsfx.Sec);

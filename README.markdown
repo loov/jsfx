@@ -1,8 +1,8 @@
 This is a JavaScript library for sound effect generation and is supported on
 [most current browsers](http://caniuse.com/#feat=audio).
 
-For short clips it can generate the audio in 30ms in a good browser. Might
-be fast enough to do runtime generation of effects.
+Generation speed is approximately 1s audio = 10ms processing. Of course that
+value can vary a lot, depending on the settings or browser that you use.
 
 ### How to use it?
 
