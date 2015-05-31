@@ -33,10 +33,14 @@ function plot(i, v){
 	context.fillRect( i*700/TOTAL, 200 - v*150, 1, v*150);
 }
 
-var gen = new jsfx.Composite({},[
+var gen = new jsfx.Composite({
+	Frequency: {
+		RepeatAfter: 0.4
+	}
+},[
 	jsfx.Module.Frequency,
 	jsfx.Module.Vibrato,
-	jsfx.Module.Guitar,
+	jsfx.Module.Generator,
 	jsfx.Module.HLFilter,
 	jsfx.Module.Phaser,
 	jsfx.Module.ASD
@@ -46,9 +50,7 @@ var block = new Float32Array(3*jsfx.Sec);
 TOTAL = block.length;
 
 console.time("generate");
-//console.profile("generate");
 gen.generate(block);
-//console.profileEnd("generate");
 console.timeEnd("generate");
 
 //var data = jsfx.G.synth.generate(440, jsfx.Sec, 0.5);

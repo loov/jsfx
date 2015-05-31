@@ -90,13 +90,16 @@
 			Slide:      { L:-1, H:1, D:0 },
 			DeltaSlide: { L:-1, H:1, D:0 },
 
-			//TODO: implement
-			RepeatAfter:  { L: 0, H: 0.8, D: 0 },
-			Repeats:      { L: 0, H:  16, D: 8 }
+			RepeatSpeed:  { L:0, H: 3.0, D: 0 },
+
+			ChangeAmount: { L:-12, H:12, D:0   },
+			ChangeSpeed : { L:  0, H:1,  D:0.1 }
 		},
 		stage: stage.PhaseSpeed,
 		setup: function($, P){
 			var SR = $.SampleRate;
+
+			$.phaseParams = P;
 
 			$.phaseSpeed    = P.Start * TAU / SR;
 			$.phaseSpeedMax = P.Max * TAU / SR;
@@ -107,6 +110,19 @@
 
 			$.phaseSlide = 1.0 + pow(P.Slide, 3.0) * 64.0 / SR;
 			$.phaseDeltaSlide = pow(P.DeltaSlide, 3.0) / (SR * 1000);
+
+			$.repeatTime = 0;
+			$.repeatLimit = Infinity;
+			if(P.RepeatSpeed > 0){
+				$.repeatLimit = P.RepeatSpeed * SR;
+			}
+
+			$.arpeggiatorTime = 0;
+			$.arpeggiatorLimit = P.ChangeSpeed * SR;
+			if(P.ChangeAmount == 0){
+				$.arpeggiatorLimit = Infinity;
+			}
+			$.arpeggiatorMod = 1 + P.ChangeAmount / 12.0;
 		},
 		process: function($, block){
 			var speed = +$.phaseSpeed,
@@ -115,12 +131,35 @@
 				slide = +$.phaseSlide,
 				deltaSlide = +$.phaseDeltaSlide;
 
+			var repeatTime  = $.repeatTime,
+				repeatLimit = $.repeatLimit;
+
+			var arpTime  = $.arpeggiatorTime,
+				arpLimit = $.arpeggiatorLimit,
+				arpMod   = $.arpeggiatorMod;
+
 			for(var i = 0; i < block.length; i++){
 				slide += deltaSlide;
 				speed *= slide;
 				speed = speed < min ? min : speed > max ? max : speed;
+
+				if(repeatTime > repeatLimit){
+					this.setup($, $.phaseParams);
+					return i + this.process($, block.subarray(i)) - 1;
+				}
+				repeatTime++;
+
+				if(arpTime > arpLimit){
+					speed *= arpMod;
+					arpTime = 0;
+				}
+				arpTime++;
+
 				block[i] += speed;
 			}
+
+			$.repeatTime = repeatTime;
+			$.arpeggiatorTime = arpTime;
 
 			$.phaseSpeed = speed;
 			$.phaseSlide = slide;
@@ -255,7 +294,6 @@
 			var h = $.guitarHead;
 
 			var buffer = $.guitarBuffer;
-
 			for(var i = 0; i < block.length; i++){
 				// buffer size
 				var n = (TAU / block[i])|0;
@@ -424,7 +462,7 @@
 			Attack:       { L: 0, H: 1, D: 0.1 },
 			Sustain:      { L: 0, H: 2, D: 0.3 },
 			SustainPunch: { L: 0, H: 3, D: 1.0 },
-			Decay:        { L: 0, H: 2, D: 1   }
+			Decay:        { L: 0, H: 2, D: 1.0 }
 		},
 		stage: stage.Volume,
 		setup: function($, P){
