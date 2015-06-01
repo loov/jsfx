@@ -215,10 +215,10 @@
 	jsfx.Module.Frequency = {
 		name: 'Frequency',
 		params: {
-			Start: { L:20, H:2400, D:440  },
+			Start: { L:30, H:1800, D:440  },
 
-			Min: { L:20, H:2400, D:20    },
-			Max: { L:20, H:2400, D:2400  },
+			Min: { L:30, H:1800, D:30    },
+			Max: { L:30, H:1800, D:1800  },
 
 			Slide:      { L:-1, H:1, D:0 },
 			DeltaSlide: { L:-1, H:1, D:0 },
