@@ -4,6 +4,12 @@
 	<meta http-eqv="X-UA-Compatible" content="IE=edge">
 	<meta name="viewport" content="width=device-width, initial-scale=1.0">
 	<title>jsfx</title>
+	<script>
+		window.onerror = function(msg, url, linenumber) {
+			alert('Error message: '+msg+'\nURL: '+url+'\nLine Number: '+linenumber);
+			return true;
+		}
+	</script>
 	<script src="jsfx.js"></script>
 </head>
 <body>
