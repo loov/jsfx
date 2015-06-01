@@ -377,9 +377,9 @@
 			assert(typeof $.generator === 'function', 'generator must be a function')
 
 			$.generatorA = P.A;
-			$.generatorASlide = P.ASlide / $.SampleRate;
+			$.generatorASlide = P.ASlide;
 			$.generatorB = P.B;
-			$.generatorBSlide = P.BSlide / $.SampleRate;
+			$.generatorBSlide = P.BSlide;
 		},
 		process: function($, block){
 			return $.generator($, block);
@@ -765,7 +765,7 @@
 			var p = EmptyParams();
 			p.Generator.Func = rchoose(['square', 'saw', 'noise']);
 			p.Generator.A = runif(0.6);
-			p.Generator.ASlide = runif(0.5);
+			p.Generator.ASlide = runif(1, -0.5);
 
 			p.Frequency.Start = runif(880, 220);
 			p.Frequency.Slide = -runif(0.4, 0.3);
@@ -844,7 +844,7 @@
 	// saw wave
 	jsfx.G.saw = newGenerator("sample = 2*(phase/TAU - ((phase/TAU + 0.5)|0));");
 	// triangle wave
-	jsfx.G.triangle = newGenerator("Math.abs(4 * ((phase/TAU - 0.25)%1) - 2) - 1;");
+	jsfx.G.triangle = newGenerator("sample = Math.abs(4 * ((phase/TAU - 0.25)%1) - 2) - 1;");
 	// square wave
 	jsfx.G.square = newGenerator("var s = Math.sin(phase); sample = s > A ? 1.0 : s < A ? -1.0 : A;");
 	// simple synth
@@ -857,7 +857,7 @@
 	// Karplus-Strong string
 	jsfx.G.string = {
 		create: function(){
-			var BS = 1 << 1;
+			var BS = 1 << 16;
 			var BM = BS-1;
 
 			var buffer = new Float32Array(BS);
@@ -866,19 +866,33 @@
 			}
 
 			var head = 0;
-			return function(phase, A, B, phaseSpeed){
-				var n = (TAU/phaseSpeed)|0;
-				n = n > BS ? BS : n;
+			return function($, block){
+				var TAU = Math.PI * 2;
+				var A = +$.generatorA, ASlide = +$.generatorASlide,
+					B = +$.generatorB, BSlide = +$.generatorBSlide;
+				var buf = buffer;
 
-				var t = ((head - n) + BS) & BM;
-				buffer[head] = (
-					buffer[(t-0+BS)&BM] +
-					buffer[(t-1+BS)&BM]*A +
-					buffer[(t-2+BS)&BM]*B) / (1+A+B);
+				for(var i = 0; i < block.length; i++){
+					var phaseSpeed = block[i];
+					var n = (TAU/phaseSpeed)|0;
+					A += ASlide; B += BSlide;
+					A = A < 0 ? 0 : A > 1 ? 1 : A;
+					B = B < 0 ? 0 : B > 1 ? 1 : B;
 
-				var r = buffer[head];
-				head = (head + 1) & BM;
-				return r;
+					var t = ((head - n) + BS) & BM;
+					var sample = (
+						buf[(t-0+BS)&BM]*1 +
+						buf[(t-1+BS)&BM]*A +
+						buf[(t-2+BS)&BM]*B) / (1+A+B);
+
+					buf[head] = sample;
+					block[i] = buf[head];
+					head = (head + 1) & BM;
+				}
+
+				$.generatorA = A;
+				$.generatorB = B;
+				return block.length;
 			}
 		}
 	};
@@ -887,6 +901,7 @@
 	function newGenerator(line){
 		return new Function("$", "block", "" +
 			"var TAU = Math.PI * 2;\n" +
+			"var sample;\n" +
 			"var phase = +$.generatorPhase,\n"+
 			"	A = +$.generatorA, ASlide = +$.generatorASlide,\n"+
 			"	B = +$.generatorB, BSlide = +$.generatorBSlide;\n"+
@@ -896,6 +911,8 @@
 			"	phase += phaseSpeed;\n"+
 			"	if(phase > TAU){ phase -= TAU };\n"+
 			"	A += ASlide; B += BSlide;\n"+
+			"   A = A < 0 ? 0 : A > 1 ? 1 : A;\n"+
+			"   B = B < 0 ? 0 : B > 1 ? 1 : B;\n"+
 			line +
 			"	block[i] = sample;\n"+
 			"}\n"+
