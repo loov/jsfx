@@ -164,6 +164,8 @@
 	function Processor(params, modules){
 		if(typeof params === 'function'){
 			params = params();
+		} else {
+			params = JSON.parse(JSON.stringify(params))
 		}
 		this.finished = false;
 

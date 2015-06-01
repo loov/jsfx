@@ -51,7 +51,6 @@ var PlayContext;
 if(AudioContext){
 	var Live = jsfx.Live();
 	PlayContext = function(params){
-		var params = JSON.parse(JSON.stringify(params));
 		Live.Play(params);
 	};
 } else {
