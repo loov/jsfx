@@ -33,7 +33,7 @@
 			SampleCount = 3*jsfx.Sec;
 		}
 
-		var block = new Float32Array(SampleCount);
+		var block = createFloatArray(SampleCount);
 		gen.generate(block);
 		return CreateAudio(block);
 	};
@@ -403,7 +403,7 @@
 			$.guitarB = P.B;
 			$.guitarC = P.C;
 
-			$.guitarBuffer = new Float32Array(GuitarBufferSize);
+			$.guitarBuffer = createFloatArray(GuitarBufferSize);
 			$.guitarHead = 0;
 			var B = $.guitarBuffer;
 			for(var i = 0; i < B.length; i++){
@@ -531,7 +531,7 @@
 		},
 		stage: stage.SampleMod + 1,
 		setup: function($, P){
-			$.phaserBuffer = new Float32Array(PhaserBufferSize);
+			$.phaserBuffer = createFloatArray(PhaserBufferSize);
 			$.phaserPos  = 0;
 			$.phaserOffset = pow(P.Offset, 2.0) * (PhaserBufferSize - 4);
 			$.phaserOffsetSlide = pow(P.Sweep, 3.0) * 4000 / $.SampleRate;
@@ -866,7 +866,7 @@
 			var BS = 1 << 16;
 			var BM = BS-1;
 
-			var buffer = new Float32Array(BS);
+			var buffer = createFloatArray(BS);
 			for(var i = 0; i < buffer.length; i++){
 				buffer[i] = Math.random()*2-1;
 			}
@@ -935,12 +935,14 @@
 	// Creates an Audio element from audio data [-1.0 .. 1.0]
 	jsfx.CreateAudio = CreateAudio;
 	function CreateAudio(data){
-		assert(data instanceof Float32Array, 'data must be an Float32Array');
+		if(typeof Float32Array !== "undefined"){
+			assert(data instanceof Float32Array, 'data must be an Float32Array');
+		}
 
 		var blockAlign = numChannels * bitsPerSample >> 3;
 		var byteRate = jsfx.SampleRate * blockAlign;
 
-		var output = new Uint8Array(8 + 36 + data.length * 2);
+		var output = createByteArray(8 + 36 + data.length * 2);
 		var p = 0;
 
 		// emits string to output
@@ -1061,4 +1063,24 @@
 		return r;
 	}
 
+
+	function createFloatArray(N){
+		if(typeof Float32Array === "undefined") {
+			var r = new Array(N);
+			for(var i = 0; i < r.length; i++){
+				r[i] = 0.0;
+			}
+		}
+		return new Float32Array(N);
+	}
+
+	function createByteArray(N){
+		if(typeof Uint8Array === "undefined") {
+			var r = new Array(N);
+			for(var i = 0; i < r.length; i++){
+				r[i] = 0|0;
+			}
+		}
+		return new Uint8Array(N);
+	}
 })(this.jsfx = {});
