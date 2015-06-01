@@ -601,7 +601,10 @@
 				{S: V, E: 0, N: (P.Decay   * SR)|0 }  // Decay
 			];
 			// G = volume gradient
-			$.envelopes.map(function(e){ e.G = (e.E - e.S) / e.N; })
+			for(var i = 0; i < $.envelopes.length; i += 1){
+				var e = $.envelopes[i];
+				e.G = (e.E - e.S) / e.N;
+			}
 		},
 		process: function($, block){
 			var i = 0;
@@ -644,9 +647,10 @@
 		return map_object(jsfx.Module, function(){ return {} });
 	}
 
+	jsfx._RemoveEmptyParams = RemoveEmptyParams;
 	function RemoveEmptyParams(params){
 		for(var name in params){
-			if(Object.keys(params[name]).length == 0){
+			if(Object_keys(params[name]).length == 0){
 				delete params[name];
 			}
 		}
@@ -823,7 +827,7 @@
 				var defs = jsfx.Module[moduleName].params;
 				map_object(defs, function(def, name){
 					if(def.C){
-						var values = Object.keys(def.C);
+						var values = Object_keys(def.C);
 						out[name] = values[(values.length * Math.random()) | 0];
 					} else {
 						out[name] = Math.random() * (def.H - def.L) + def.L;
@@ -1049,6 +1053,12 @@
 
 	function rchoose(gens){
 		return gens[(gens.length*Math.random())|0];
+	}
+
+	function Object_keys(obj){
+		var r = [];
+		for(var name in obj){ r.push(name); }
+		return r;
 	}
 
 })(this.jsfx = {});

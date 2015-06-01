@@ -72,11 +72,7 @@ function AddToLibrary(){
 	}
 
 	var params = JSON.parse(JSON.stringify(CurrentParams));
-	for(var module in params){
-		if(Object.keys(params[module]).length == 0){
-			delete params[module];
-		}
-	}
+	jsfx._RemoveEmptyParams(params);
 
 	Library[name] = params;
 	UpdateHash();
