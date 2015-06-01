@@ -382,21 +382,7 @@
 			$.generatorBSlide = P.BSlide / $.SampleRate;
 		},
 		process: function($, block){
-			var phase = +$.generatorPhase,
-				A = +$.generatorA, ASlide = +$.generatorASlide,
-				B = +$.generatorB, BSlide = +$.generatorBSlide;
-
-			for(var i = 0; i < block.length; i++){
-				phase += block[i];
-				if(phase > TAU){ phase -= TAU };
-				A += ASlide; B += BSlide;
-				block[i] = $.generator(phase, A, B, block[i]);
-			}
-
-			$.generatorPhase = phase;
-			$.generatorA = A;
-			$.generatorB = B;
-			return block.length;
+			return $.generator($, block);
 		}
 	};
 
@@ -851,49 +837,29 @@
 
 	// GENERATORS
 
-	// STATELESS
 	// uniform noise
-	jsfx.G.unoise = Math.random;
+	jsfx.G.unoise = newGenerator("sample = Math.random();");
 	// sine wave
-	jsfx.G.sine = Math.sin;
+	jsfx.G.sine = newGenerator("sample = Math.sin(phase);");
 	// saw wave
-	jsfx.G.saw = function(phase){
-		return 2*(phase/TAU - ((phase/TAU + 0.5)|0));
-	};
+	jsfx.G.saw = newGenerator("sample = 2*(phase/TAU - ((phase/TAU + 0.5)|0));");
 	// triangle wave
-	jsfx.G.triangle = function(phase){
-		return Math.abs(4 * ((phase/TAU - 0.25)%1) - 2) - 1;
-	};
+	jsfx.G.triangle = newGenerator("Math.abs(4 * ((phase/TAU - 0.25)%1) - 2) - 1;");
 	// square wave
-	jsfx.G.square = function(phase, A){
-		var s = sin(phase);
-		return s > A ? 1.0 : s < A ? -1.0 : A;
-	};
+	jsfx.G.square = newGenerator("var s = Math.sin(phase); sample = s > A ? 1.0 : s < A ? -1.0 : A;");
 	// simple synth
-	jsfx.G.synth = function(phase){
-		return sin(phase) + .5*sin(phase/2) + .3*sin(phase/4);
-	};
-	
+	jsfx.G.synth = newGenerator("sample = Math.sin(phase) + .5*Math.sin(phase/2) + .3*Math.sin(phase/4);");
+
 	// STATEFUL
-	// noise
-	jsfx.G.noise = {
-		create: function(){
-			var last = Math.random();
-			return function(phase){
-				if(phase % TAU < 4){
-					last = Math.random() * 2 - 1;
-				}
-				return last;
-			};
-		}
-	};
-	
+	var __noiseLast = 0;
+	jsfx.G.noise = newGenerator("if(phase % TAU < 4){__noiseLast = Math.random() * 2 - 1;} sample = __noiseLast;");
+
 	// Karplus-Strong string
 	jsfx.G.string = {
 		create: function(){
 			var BS = 1 << 1;
 			var BM = BS-1;
-			
+
 			var buffer = new Float32Array(BS);
 			for(var i = 0; i < buffer.length; i++){
 				buffer[i] = Math.random()*2-1;
@@ -903,7 +869,7 @@
 			return function(phase, A, B, phaseSpeed){
 				var n = (TAU/phaseSpeed)|0;
 				n = n > BS ? BS : n;
-				
+
 				var t = ((head - n) + BS) & BM;
 				buffer[head] = (
 					buffer[(t-0+BS)&BM] +
@@ -918,25 +884,28 @@
 	};
 
 	// Generates samples using given frequency and generator
-	jsfx.Generate = Generate;
-	function Generate(frequency, sampleCount, gen, A, B){
-		var data = new Float32Array(sampleCount|0);
-		var phase = 0;
-		var phaseStep = frequency * TAU / jsfx.SampleRate;
-		for(var i = 0; i < data.length; i++){
-			data[i] = gen(phase, A, B);
-			phase += phaseStep;
-			if(phase > TAU){phase -= TAU};
-		}
-		return data;
+	function newGenerator(line){
+		return new Function("$", "block", "" +
+			"var TAU = Math.PI * 2;\n" +
+			"var phase = +$.generatorPhase,\n"+
+			"	A = +$.generatorA, ASlide = +$.generatorASlide,\n"+
+			"	B = +$.generatorB, BSlide = +$.generatorBSlide;\n"+
+			"\n"+
+			"for(var i = 0; i < block.length; i++){\n"+
+			"	var phaseSpeed = block[i];\n"+
+			"	phase += phaseSpeed;\n"+
+			"	if(phase > TAU){ phase -= TAU };\n"+
+			"	A += ASlide; B += BSlide;\n"+
+			line +
+			"	block[i] = sample;\n"+
+			"}\n"+
+			"\n"+
+			"$.generatorPhase = phase;\n"+
+			"$.generatorA = A;\n"+
+			"$.generatorB = B;\n"+
+			"return block.length;\n" +
+		"");
 	}
-
-	// Convenience method for using stateless generators
-	map_object(jsfx.G, function(gen, name){
-		jsfx.G[name].generate = function(frequency, sampleCount, A, B){
-			return Generate(frequency, sampleCount, gen, A, B);
-		};
-	});
 
 	// WAVE SUPPORT
 

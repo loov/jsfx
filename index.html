@@ -12,7 +12,7 @@
 			<div class="panel-title">Control</div>
 			<button onclick="PlayCurrent()">Play</button>
 			<button onclick="AddToLibrary()">Add</button>
-			<div id="last-time" title="Time it took to generate.">10ms</div>
+			<div id="last-time" title="Time it took to generate."></div>
 			<div class="clear"></div>
 		</div>
 		<div id="presets" class="panel">
@@ -45,7 +45,7 @@ var Play = function(params){
 	document.getElementById("last-time").innerText = time;
 };
 
-if(AudioContext){
+if(false && AudioContext){
 	var Live = jsfx.Live();
 	Play = function(params){
 		var params = JSON.parse(JSON.stringify(params));
