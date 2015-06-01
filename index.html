@@ -10,6 +10,7 @@
 		<h1 class="title">jsfx</h1>
 		<div id="control" class="panel">
 			<div class="panel-title">Control</div>
+			<input type="checkbox" id="use-audiocontext" title="Use AudioContext." onclick="ChangePlayMode()">
 			<button onclick="PlayCurrent()">Play</button>
 			<button onclick="AddToLibrary()">Add</button>
 			<div id="last-time" title="Time it took to generate."></div>
@@ -36,7 +37,7 @@ var CurrentParams = {};
 
 function PlayCurrent(){ Play(CurrentParams); }
 
-var Play = function(params){
+var PlayAudio = function(params){
 	var start = (new Date())|0;
 	jsfx.Sound(params).play();
 	var stop = (new Date())|0;
@@ -44,13 +45,25 @@ var Play = function(params){
 	console.log("Generated in", time);
 	document.getElementById("last-time").innerText = time;
 };
+var Play = PlayAudio;
 
-if(false && AudioContext){
+var PlayContext;
+if(AudioContext){
 	var Live = jsfx.Live();
-	Play = function(params){
+	PlayContext = function(params){
 		var params = JSON.parse(JSON.stringify(params));
 		Live.Play(params);
 	};
+} else {
+	document.getElementById("use-audiocontext").hidden = true;
+}
+
+function ChangePlayMode(){
+	if(document.getElementById("use-audiocontext").checked){
+		Play = PlayContext;
+	} else {
+		Play = PlayAudio;
+	}
 }
 
 function AddToLibrary(){
@@ -341,6 +354,10 @@ UpdateCurrentView();
 	#jsfx .panel table {
 		font-size: 0.8em;
 		width: 100%;
+	}
+
+	#jsfx #use-audiocontext {
+		float: left;
 	}
 
 	#jsfx .panel table input[type="range"] { width: 100%; }
