@@ -68,7 +68,7 @@ var sfx = jsfx.Live(library);
 
 It's recommended to copy the jsfx.js to your own project instead of
 automatically downloading the latest version. Since every slight adjustment
-to the audio generation code can affect the
+to the audio generation code can affect the resulting audio significantly.
 
 The stable API is what is described in the README, everything else is
 subject to change.
