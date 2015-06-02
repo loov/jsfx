@@ -24,17 +24,9 @@
 	// Creates a new Audio object based on the params
 	// params can be a params generating function or the actual parameters
 	jsfx.Sound = function(params){
-		var gen = new Processor(params, jsfx.DefaultModules);
-		var SampleCount = 0;
-		for(var i = 0; i < gen.state.envelopes.length; i += 1){
-			SampleCount += gen.state.envelopes[i].N;
-		}
-		if(SampleCount === 0){
-			SampleCount = 3*jsfx.Sec;
-		}
-
-		var block = createFloatArray(SampleCount);
-		gen.generate(block);
+		var processor = new Processor(params, jsfx.DefaultModules);
+		var block = createFloatArray(processor.getSamplesLeft());
+		processor.generate(block);
 		return CreateAudio(block);
 	};
 
@@ -185,6 +177,9 @@
 	// params can be a function that creates a parameter set
 	jsfx.Processor = Processor;
 	function Processor(params, modules){
+		params = params || {};
+		modules = modules || jsfx.DefaultModules;
+
 		if(typeof params === 'function'){
 			params = params();
 		} else {
@@ -231,6 +226,16 @@
 			for(var i = N; i < block.length; i++){
 				block[i] = 0;
 			}
+		},
+		getSamplesLeft: function(){
+			var samples = 0;
+			for(var i = 0; i < this.state.envelopes.length; i += 1){
+				samples += this.state.envelopes[i].N;
+			}
+			if(samples === 0){
+				samples = 3*this.state.SampleRate;
+			}
+			return samples;
 		}
 	};
 
@@ -1086,7 +1091,7 @@
 		return r;
 	}
 
-
+	jsfx._createFloatArray = createFloatArray;
 	function createFloatArray(N){
 		if(typeof Float32Array === "undefined") {
 			var r = new Array(N);

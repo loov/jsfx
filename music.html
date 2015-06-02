@@ -1,0 +1,29 @@
+<script src="jsfx.js"></script>
+<script src="jsmusic.js"></script>
+<script>
+var sequence = "cegabCEGDD-a";
+
+var modules = [
+	jsfx.Module.Frequency,
+	jsfx.Module.Vibrato,
+	jsfx.Module.Guitar,
+	jsfx.Module.Volume
+];
+
+var params = function(){
+	return {
+		Frequency: { Slide: (Math.random() - 0.5)/5 },
+		Vibrato: {
+			Depth: Math.random() / 10,
+			Frequency: Math.random() * 10 + 5
+		},
+		Volume: { Master: 1, Attack: 0, Punch: 1, Release: 1, Decay: 3 }
+	};
+};
+
+console.time("generate");
+var song = jsmusic.Simple(sequence, params, 260, modules);
+console.timeEnd("generate");
+song.play();
+
+</script>
