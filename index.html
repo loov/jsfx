@@ -15,6 +15,7 @@
 <body>
 	<div id="jsfx">
 		<h1 class="title">jsfx</h1>
+		<div class="description">See <a href="https://github.com/loov/jsfx">github.com/loov/jsfx</a> for more information.</div>
 		<div id="control" class="panel">
 			<div class="panel-title">Control</div>
 			<input type="checkbox" id="use-audiocontext" title="Use AudioContext." onclick="ChangePlayMode()">
@@ -292,6 +293,10 @@ UpdateCurrentView();
 		margin-bottom: 16px;
 		font-size: 2em;
 		color: #444;
+	}
+
+	#jsfx .description {
+		margin-bottom: 8px;
 	}
 
 	#jsfx .panel {
