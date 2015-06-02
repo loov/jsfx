@@ -38,45 +38,61 @@
 		return CreateAudio(block);
 	};
 
-	// Sounds takes a named set of params, and generates multiple
-	// sound objects at once.
-	jsfx.Sounds = function(paramset){
-		var sounds = {};
-		for(var name in paramset){
-			sounds[name] = jsfx.Sound(paramset[name]);
-		}
-		return sounds;
-	};
-
 	// Same as Sounds, but avoids locking the browser for too long
 	// in case you have a large amount of sounds to generate
-	jsfx.SoundsAsync = function(paramset, ondone, onprogress){
-		var names = [];
+	jsfx.Sounds = function(library, ondone, onprogress){
+		var audio  = {};
+		var player = {};
+		player._audio = audio;
 
-		// create stubs for audio objects
-		var sounds = {};
-		for(var name in paramset){
-			sounds[name] = new Audio();
-			names.push(name);
-		}
+		var toLoad = [];
 
-		var loaded = 0, total = names.length;
+		// create playing functions
+		map_object(library, function(_, name){
+			player[name] = function(){
+				if(typeof audio[name] !== "undefined"){
+					audio[name].currentTime = 0.0;
+					audio[name].play();
+				}
+			};
+			toLoad.push(name);
+		});
+
+		var loaded = 0, total = toLoad.length;
 		function next(){
-			if(names.length == 0){
+			if(toLoad.length == 0){
 				ondone && ondone(sounds);
 				return;
 			}
-			var name = names.shift();
-			sounds[name] = jsfx.Sound(paramset[name]);
+			var name = toLoad.shift();
+			audio[name] = jsfx.Sound(library[name]);
 			loaded++;
 			onprogress && onprogress(name, loaded, total);
 
-			window.setTimeout(30, next);
+			window.setTimeout(next, 30);
 		}
+		next();
 
-		window.setTimeout(30, next);
-		return sounds;
+		return player;
 	}
+
+	// SoundsImmediate takes a named set of params, and generates multiple
+	// sound objects at once.
+	jsfx.SoundsImmediate = function(library){
+		var audio = {};
+		var player = {};
+		player._audio = audio;
+		map_object(library, function(params, name){
+			audio[name] = jsfx.Sound(params);
+			player[name] = function(){
+				if(typeof audio[name] !== "undefined"){
+					audio[name].currentTime = 0.0;
+					audio[name].play();
+				}
+			};
+		})
+		return player;
+	};
 
 	if(typeof AudioContext !== "undefined"){
 		// Node creates a new AudioContext ScriptProcessor that outputs the
@@ -88,7 +104,9 @@
 				var block = ev.outputBuffer.getChannelData(0);
 				gen.generate(block);
 				if(!stayConnected && gen.finished){
-					node.disconnect();
+					// we need to do an async disconnect, otherwise Chrome may
+					// glitch
+					setTimeout(function(){ node.disconnect(); }, 0);
 				}
 			}
 			return node;
@@ -96,33 +114,38 @@
 
 		// Live creates an managed AudioContext for playing.
 		// This is useful, when you want to use procedurally generated sounds.
-		jsfx.Live = function(paramset){
+		jsfx.Live = function(library, BufferSize){
 			//TODO: add limit for number of notes played at the same time
+			BufferSize = BufferSize || 2048;
+			var player = {};
+
 			var context = new AudioContext();
 			var volume = context.createGain();
 			volume.connect(context.destination);
 
-			var play = map_object(paramset, function(params){
-				return function(){
-					var node = jsfx.Node(context, params, 2048);
+			player._context = context;
+			player._volume = volume;
+
+			map_object(library, function(params, name){
+				player[name] =  function(){
+					var node = jsfx.Node(context, params, BufferSize);
 					node.connect(volume);
 				};
 			});
 
-			return {
-				close: function(){
-					context.close();
-				},
-				context: context,
-				play: play,
-				Play: function(params){
-					var node = jsfx.Node(context, params, 2048);
-					node.connect(volume);
-				},
-				get volume(){ return volume.gain.value; },
-				set volume(v){ volume.gain.value = v; }
+			player._close = function(){
+				context.close();
 			};
+
+			player._play = function(params){
+				var node = jsfx.Node(context, params, BufferSize);
+				node.connect(volume);
+			};
+
+			return player;
 		}
+	} else {
+		jsfx.Live = jsfx.Sounds;
 	}
 
 	// SOUND GENERATION

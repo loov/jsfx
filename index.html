@@ -59,7 +59,7 @@ var PlayContext;
 if(typeof AudioContext !== "undefined"){
 	var Live = jsfx.Live();
 	PlayContext = function(params){
-		Live.Play(params);
+		Live._play(params);
 	};
 } else {
 	document.getElementById("use-audiocontext").hidden = true;
