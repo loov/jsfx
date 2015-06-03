@@ -89,16 +89,16 @@
 	if(typeof AudioContext !== "undefined"){
 		// Node creates a new AudioContext ScriptProcessor that outputs the
 		// sound. It will automatically disconnect, unless otherwise specified.
-		jsfx.Node = function(audioContext, params, bufferSize, stayConnected){
+		jsfx.Node = function(audioContext, params, modules, bufferSize, stayConnected){
 			var node = audioContext.createScriptProcessor(bufferSize, 0, 1);
-			var gen = new Processor(params, jsfx.DefaultModules);
+			var gen = new Processor(params, modules || jsfx.DefaultModules);
 			node.onaudioprocess = function(ev){
 				var block = ev.outputBuffer.getChannelData(0);
 				gen.generate(block);
 				if(!stayConnected && gen.finished){
 					// we need to do an async disconnect, otherwise Chrome may
 					// glitch
-					setTimeout(function(){ node.disconnect(); }, 0);
+					setTimeout(function(){ node.disconnect(); }, 30);
 				}
 			}
 			return node;
@@ -106,7 +106,7 @@
 
 		// Live creates an managed AudioContext for playing.
 		// This is useful, when you want to use procedurally generated sounds.
-		jsfx.Live = function(library, BufferSize){
+		jsfx.Live = function(library, modules, BufferSize){
 			//TODO: add limit for number of notes played at the same time
 			BufferSize = BufferSize || 2048;
 			var player = {};
@@ -120,7 +120,7 @@
 
 			map_object(library, function(params, name){
 				player[name] =  function(){
-					var node = jsfx.Node(context, params, BufferSize);
+					var node = jsfx.Node(context, params, modules, BufferSize);
 					node.connect(volume);
 				};
 			});
@@ -130,7 +130,7 @@
 			};
 
 			player._play = function(params){
-				var node = jsfx.Node(context, params, BufferSize);
+				var node = jsfx.Node(context, params, modules, BufferSize);
 				node.connect(volume);
 			};
 
