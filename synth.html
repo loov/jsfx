@@ -1,0 +1,60 @@
+<b>Note this is broken on Chrome ATM.</b>
+<p>Play with <b>AWSEDFTGYHUJK</b> keys.</p>
+<script src="jsfx.js"></script>
+<script>
+
+var modules = [
+	jsfx.Module.Frequency,
+	jsfx.Module.Vibrato,
+	jsfx.Module.Guitar,
+	jsfx.Module.Volume
+];
+
+var base = function(){
+	return {
+		Frequency: { Slide: (Math.random() - 0.5)/5 },
+		Vibrato: {
+			Depth: Math.random() / 10,
+			Frequency: Math.random() * 10 + 5
+		},
+		Volume: { Master: 1, Attack: 0, Punch: 1, Release: 1, Decay: 3 }
+	};
+};
+
+var live = jsfx.Live({}, modules);
+var scale = "AWSEDFTGYHUJK";
+
+document.onkeydown = function(ev){
+	var key = String.fromCharCode(ev.which);
+	var note = scale.indexOf(key);
+	var freq = 440 * Math.pow(2, note/12);
+
+	var params = MergeParams(base, { "Frequency": {"Start": freq}});
+	live._play(params);
+};
+
+// modifies the override
+function MergeParams(base, override){
+	if(typeof base === 'function'){
+		base = base();
+	} else {
+		base = JSON.parse(JSON.stringify(base));
+	}
+
+	if(typeof override === 'function'){
+		override = override();
+	}
+
+	for(var name in override){
+		if(typeof base[name] === 'undefined'){
+			base[name] = {};
+		}
+		for(var param in override[name]){
+			base[name][param] = override[name][param];
+		}
+	}
+
+	return base;
+}
+
+</script>
