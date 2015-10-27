@@ -612,10 +612,10 @@
 		name: 'Volume',
 		params: {
 			Master:  { L: 0, H: 1, D: 0.5 },
-			Attack:  { L: 0, H: 1, D: 0.01 },
+			Attack:  { L: 0.001, H: 1, D: 0.01 },
 			Sustain: { L: 0, H: 2, D: 0.3 },
 			Punch:   { L: 0, H: 3, D: 1.0 },
-			Decay:   { L: 0, H: 2, D: 1.0 }
+			Decay:   { L: 0.001, H: 2, D: 1.0 }
 		},
 		stage: stage.Volume,
 		setup: function($, P){
