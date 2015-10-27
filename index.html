@@ -22,6 +22,7 @@
 			<input type="checkbox" id="use-audiocontext" title="Use AudioContext." onclick="ChangePlayMode()">
 			<button onclick="PlayCurrent()">Play</button>
 			<button onclick="AddToLibrary()">Add</button>
+			<a class="button" id="download" href="#" onmousedown="UpdateDownloadLink()" download="sound.wav">Download</a>
 			<div id="last-time" title="Time it took to generate."></div>
 			<div class="clear"></div>
 		</div>
@@ -120,10 +121,17 @@ window.onhashchange = function(ev){
 	}
 };
 
+function UpdateDownloadLink(){
+	var sound = jsfx.Sound(CurrentParams);
+	var el = document.getElementById("download");
+	el.href = sound.src;
+}
+
 function UpdateCurrentView(){
 	// create a copy of params
 	var params = JSON.parse(JSON.stringify(CurrentParams));
 	jsfx.InitDefaultParams(params, jsfx.DefaultModules);
+
 	list(params, function(moduleName, params){
 		list(params, function(paramName, paramValue){
 			var element = document.getElementById(moduleName + "$" + paramName);;
@@ -343,19 +351,25 @@ UpdateCurrentView();
 		color: #666;
 	}
 
-	#jsfx .panel button {
+	#jsfx .panel button, #jsfx .panel .button {
 		float: left;
 	}
 
-	#jsfx button {
+	#jsfx button, #jsfx .button {
+		font-family: RobotoDraft,Roboto,Helvetica Neue,Helvetica,Arial,sans-serif;
+		font-weight: 300;
+		font-size: 14px;
+
 		margin: 2px;
 		border: 1px solid #AAA;
 		background: #FFF;
 		cursor: pointer;
 		padding: 4px 8px;
+		text-decoration: none;
+		color: inherit;
 	}
 
-	#jsfx button:hover {
+	#jsfx button:hover, #jsfx .button:hover {
 		border: 1px solid #7DC6FF;
 		box-shadow: 0 1px 4px 0 rgba(0, 0, 0, 0.37);
 	}
