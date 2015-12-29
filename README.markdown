@@ -25,7 +25,7 @@ It will look something like:
 
     {"select":{"Volume":{"Sustain":0.1,"Decay":0.15,"Punch":0.55}}}
 
-To use that library, you need to include `jsfx.js` in your code and use `jsfx.Sounds(libarry)` to initialize it. For example:
+To use that library, you need to include `jsfx.js` in your code and use `jsfx.Sounds(library)` to initialize it. For example:
 
 ```html
 <script src="jsfx.js"></script>
