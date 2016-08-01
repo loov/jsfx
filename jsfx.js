@@ -960,9 +960,9 @@
 
 	// WAVE SUPPORT
 
-	// Creates an Audio element from audio data [-1.0 .. 1.0]
-	jsfx.CreateAudio = CreateAudio;
-	function CreateAudio(data){
+	// Creates an Wave byte array from audio data [-1.0 .. 1.0]
+	jsfx.CreateWave = CreateWave;
+	function CreateWave(data){
 		if(typeof Float32Array !== "undefined"){
 			assert(data instanceof Float32Array, 'data must be an Float32Array');
 		}
@@ -996,7 +996,14 @@
 		S('data'); V(data.length * 2, 4);
 		CopyFToU8(output.subarray(p), data);
 
-		return new Audio('data:audio/wav;base64,' + U8ToB64(output));
+		return output;
+	};
+
+	// Creates an Audio element from audio data [-1.0 .. 1.0]
+	jsfx.CreateAudio = CreateAudio;
+	function CreateAudio(data){
+		var wave = CreateWave(data);
+		return new Audio('data:audio/wav;base64,' + U8ToB64(wave));
 	};
 
 	jsfx.DownloadAsFile = function(audio){
@@ -1024,6 +1031,8 @@
 		}
 	}
 
+	// Encodes Uint8Array with base64
+	jsfx.Util.U8ToB64 = U8ToB64;
 	function U8ToB64(data){
 		var CHUNK = 0x8000;
 		var result = '';
