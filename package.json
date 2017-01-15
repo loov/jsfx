@@ -1,0 +1,25 @@
+{
+  "name": "jsfx-audio",
+  "version": "1.0.0",
+  "description": "This is a JavaScript library for sound effect generation and is supported on most current browsers.",
+  "main": "jsfx.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/loov/jsfx.git"
+  },
+  "keywords": [
+    "audio",
+    "sound",
+    "effects",
+    "jsfx"
+  ],
+  "author": "loov",
+  "license": "MIT",
+  "bugs": {
+    "url": "https://github.com/loov/jsfx/issues"
+  },
+  "homepage": "https://github.com/loov/jsfx#readme"
+}

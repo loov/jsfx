@@ -1,5 +1,11 @@
-(function(jsfx){
-	'use strict';
+(function(root, factory) {
+  if (typeof module === "object" && typeof module.exports === "object") {
+    module.exports = factory();
+  } else {
+    root.jsfx = factory();
+  }
+}(this, function() {
+      'use strict';
 
 	var chr = String.fromCharCode;
 	var TAU = +Math.PI*2;
@@ -9,6 +15,8 @@
 	var pow = Math.pow;
 	var abs = Math.abs;
 	var EPSILON = 0.000001;
+
+  var jsfx = {};
 
 	jsfx.SampleRate = 0|0;
 	jsfx.Sec = 0|0;
@@ -1120,4 +1128,6 @@
 		}
 		return new Uint8Array(N);
 	}
-})(this.jsfx = {});
+
+  return jsfx;
+}));
