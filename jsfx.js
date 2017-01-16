@@ -1,11 +1,11 @@
 (function(root, factory) {
-  if (typeof module === "object" && typeof module.exports === "object") {
-    module.exports = factory();
-  } else {
-    root.jsfx = factory();
-  }
+	if (typeof module === "object" && typeof module.exports === "object") {
+		module.exports = factory();
+	} else {
+		root.jsfx = factory();
+	}
 }(this, function() {
-      'use strict';
+	'use strict';
 
 	var chr = String.fromCharCode;
 	var TAU = +Math.PI*2;
@@ -1091,11 +1091,11 @@
 	// uniform random
 	function runif(scale, offset){
 		var a = Math.random();
-        if(scale !== undefined)
-            a *= scale;
-        if(offset !== undefined)
-            a += offset;
-        return a;
+		if(scale !== undefined)
+			a *= scale;
+		if(offset !== undefined)
+			a += offset;
+		return a;
 	}
 
 	function rchoose(gens){
@@ -1129,5 +1129,5 @@
 		return new Uint8Array(N);
 	}
 
-  return jsfx;
+	return jsfx;
 }));
