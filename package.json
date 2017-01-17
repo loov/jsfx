@@ -1,5 +1,5 @@
 {
-	"name": "loov/jsfx",
+	"name": "loov-jsfx",
 	"version": "1.0.0",
 	"description": "Package for sound effect generation.",
 	"main": "jsfx.js",
