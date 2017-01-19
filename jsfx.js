@@ -16,7 +16,7 @@
 	var abs = Math.abs;
 	var EPSILON = 0.000001;
 
-  var jsfx = {};
+	var jsfx = {};
 
 	jsfx.SampleRate = 0|0;
 	jsfx.Sec = 0|0;
@@ -27,15 +27,27 @@
 	};
 	jsfx.SetSampleRate(getDefaultSampleRate());
 
+	function blockFromParams(params) {
+		var processor = new Processor(params, jsfx.DefaultModules);
+		var block = createFloatArray(processor.getSamplesLeft());
+		processor.generate(block);
+		return block;
+	}
+
 	// MAIN API
 
 	// Creates a new Audio object based on the params
 	// params can be a params generating function or the actual parameters
 	jsfx.Sound = function(params){
-		var processor = new Processor(params, jsfx.DefaultModules);
-		var block = createFloatArray(processor.getSamplesLeft());
-		processor.generate(block);
+		var block = blockFromParams(params);
 		return CreateAudio(block);
+	};
+
+	// Creates a new UInt8Array wave based on the params
+	// params can be a params generating function or the actual parameters
+	jsfx.Wave = function(params){
+		var block = blockFromParams(params);
+		return CreateWave(block);
 	};
 
 	// Same as Sounds, but avoids locking the browser for too long
