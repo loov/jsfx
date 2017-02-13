@@ -96,6 +96,14 @@
 		return player;
 	};
 
+	// FloatBuffer creates a FloatArray filled with audio
+	jsfx.FloatBuffer = function(params, modules) {
+		var processor = new Processor(params, jsfx.DefaultModules);
+		var block = createFloatArray(processor.getSamplesLeft());
+		processor.generate(block);
+		return block;
+	};
+
 	if (typeof AudioContext !== "undefined") {
 		// Node creates a new AudioContext ScriptProcessor that outputs the
 		// sound. It will automatically disconnect, unless otherwise specified.
@@ -115,6 +123,16 @@
 			}
 			return node;
 		}
+
+		// AudioBuffer creates a buffer filled with the proper audio
+		// This is useful, when you want to use AudioContext.BufferSource
+		jsfx.AudioBuffer = function(audioContext, params, modules) {
+			var processor = new Processor(params, modules || jsfx.DefaultModules);
+			var buffer = audioContext.createBuffer(numChannels, processor.getSamplesLeft(), jsfx.SampleRate);
+			var block = buffer.getChannelData(0);
+			processor.generate(block);
+			return buffer;
+		};
 
 		// Live creates an managed AudioContext for playing.
 		// This is useful, when you want to use procedurally generated sounds.
