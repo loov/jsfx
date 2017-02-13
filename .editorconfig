@@ -1,0 +1,18 @@
+# http://editorconfig.org
+root = true
+
+[*]
+end_of_line = lf
+max_line_length = 110
+trim_trailing_whitespace = true
+insert_final_newline = true
+
+[*.js]
+charset = utf-8
+indent_size = 4
+indent_style = tab
+
+[*.css]
+charset = utf-8
+indent_size = 4
+indent_style = tab
