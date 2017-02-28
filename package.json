@@ -1,26 +1,26 @@
 {
-	"name": "loov-jsfx",
-	"version": "1.1.0",
-	"description": "Package for sound effect generation.",
-	"main": "jsfx.js",
-	"scripts": {
-		"test": "echo \"Error: no test specified\" && exit 1"
-	},
-	"repository": {
-		"type": "git",
-		"url": "git+https://github.com/loov/jsfx.git"
-	},
-	"keywords": [
-		"audio",
-		"sound",
-		"effects",
-		"jsfx",
-		"gamedev"
-	],
-	"author": "loov",
-	"license": "MIT",
-	"bugs": {
-		"url": "https://github.com/loov/jsfx/issues"
-	},
-	"homepage": "http://loov.io/jsfx"
+  "name": "loov-jsfx",
+  "version": "1.2.0",
+  "description": "Package for sound effect generation.",
+  "main": "jsfx.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/loov/jsfx.git"
+  },
+  "keywords": [
+    "audio",
+    "sound",
+    "effects",
+    "jsfx",
+    "gamedev"
+  ],
+  "author": "loov",
+  "license": "MIT",
+  "bugs": {
+    "url": "https://github.com/loov/jsfx/issues"
+  },
+  "homepage": "http://loov.io/jsfx"
 }
