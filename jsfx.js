@@ -17,6 +17,7 @@
 	var EPSILON = 0.000001;
 
 	var jsfx = {};
+	var AudioContext = window.AudioContext || window.webkitAudioContext;
 
 	jsfx.SampleRate = 0 | 0;
 	jsfx.Sec = 0 | 0;
